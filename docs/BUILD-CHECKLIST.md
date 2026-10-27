@@ -22,3 +22,11 @@
 Still useful for a later group playtest: four people around the physical Board, long-session performance, all Sports shapes, and sound-mix preference. These do not replace the completed solo physical gesture check.
 
 Evidence scope and remaining physical checks are recorded in `ACCEPTANCE-LEDGER.md`. An installed package is not proof of visible or physical play.
+
+## Opponent-ball collisions — October 27, 2026
+- [x] Replace ghost opponents with ball collisions; protect unplayed shared-tee balls.
+- [x] Wait for all balls, assign sinks and water to the affected owner, preserve shot state in saves, and update teaching/ball visibility.
+- [x] Automated collision, multiplayer rules, existing regressions and native package checks pass (154 tests: 151 passed, three optional catalog skips).
+- [x] Inspect the revised game in a browser (title, setup, First Green and revised help).
+- [x] Install and inspect the revised package on KT's Board (visible first frame and setup/player selector; no collision play inferred).
+- [ ] Human two-player collision feel confirmed on Board.

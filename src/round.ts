@@ -1,5 +1,5 @@
 import { HOLES, type Point } from './course';
-import { createBall, FIXED_STEP, stepBall, strikeBall, type Ball, type PhysicsEvent } from './physics';
+import { createBall, FIXED_STEP, stepBalls, strikeBall, type Ball, type PhysicsEvent } from './physics';
 
 export const STROKE_CAP = 7;
 export interface RoundPlayer {
@@ -8,6 +8,8 @@ export interface RoundPlayer {
 export interface Round {
   version: 1; players: RoundPlayer[]; holeIndex: number; turnIndex: number;
   phase: 'aim' | 'roll' | 'hole-complete' | 'complete'; time: number; accumulator: number;
+  /** Balls returned from water wait out this shot, including across a save/restore. */
+  settledForShot?: string[];
 }
 export interface RoundEvent {
   type: PhysicsEvent['type'] | 'turn' | 'hole-complete' | 'complete';
@@ -33,6 +35,8 @@ export function createRound(playerIds: string[]): Round {
 export function strike(round: Round, velocity: Point): boolean {
   const player = activePlayer(round);
   if (round.phase !== 'aim' || player.finished || !strikeBall(player.ball, velocity)) return false;
+  for (const other of round.players) if (!other.finished) other.ball.lastSafe = { x: other.ball.x, y: other.ball.y };
+  round.settledForShot = [];
   player.scores[round.holeIndex]++;
   round.phase = 'roll';
   return true;
@@ -40,11 +44,15 @@ export function strike(round: Round, velocity: Point): boolean {
 
 function endTurn(round: Round, events: RoundEvent[]): void {
   const player = activePlayer(round);
-  if (player.ball.state === 'sunk') player.finished = true;
-  if (player.scores[round.holeIndex] >= STROKE_CAP) {
-    player.finished = true;
-    player.pickedUp[round.holeIndex] = player.ball.state !== 'sunk';
+  // A bump can sink another player's ball or give them their seventh stroke in water.
+  for (const golfer of round.players) {
+    if (golfer.ball.state === 'sunk') golfer.finished = true;
+    if (golfer.scores[round.holeIndex] >= STROKE_CAP) {
+      golfer.finished = true;
+      golfer.pickedUp[round.holeIndex] = golfer.ball.state !== 'sunk';
+    }
   }
+  round.settledForShot = [];
   if (round.players.every(p => p.finished)) {
     round.phase = round.holeIndex === HOLES.length - 1 ? 'complete' : 'hole-complete';
     events.push({ type: round.phase, x: player.ball.x, y: player.ball.y });
@@ -63,13 +71,18 @@ export function stepRound(round: Round, dt: number): RoundEvent[] {
   while (round.accumulator + 1e-10 >= FIXED_STEP) {
     round.accumulator -= FIXED_STEP; round.time += FIXED_STEP;
     if (round.phase !== 'roll') continue;
-    const player = activePlayer(round);
-    const result = stepBall(player.ball, currentHole(round), FIXED_STEP, round.time);
-    for (const event of result) {
+    // Unplayed balls share the tee; they enter the collision world on their first putt.
+    const players = round.players.filter(p => !p.finished && p.scores[round.holeIndex] > 0 && !round.settledForShot?.includes(p.id));
+    const result = stepBalls(players.map(p => p.ball), currentHole(round), FIXED_STEP, round.time);
+    for (const { ballIndex, ...event } of result) {
+      const player = players[ballIndex];
       events.push({ ...event, playerId: player.id });
-      if (event.type === 'water') player.scores[round.holeIndex] = Math.min(STROKE_CAP, player.scores[round.holeIndex] + 1);
+      if (event.type === 'water') {
+        player.scores[round.holeIndex] = Math.min(STROKE_CAP, player.scores[round.holeIndex] + 1);
+        (round.settledForShot ??= []).push(player.id);
+      }
     }
-    if (player.ball.state !== 'moving') endTurn(round, events);
+    if (round.players.every(p => p.ball.state !== 'moving')) endTurn(round, events);
   }
   return events;
 }
@@ -77,6 +90,7 @@ export function stepRound(round: Round, dt: number): RoundEvent[] {
 export function advanceHole(round: Round): boolean {
   if (round.phase !== 'hole-complete' || round.holeIndex >= HOLES.length - 1) return false;
   round.holeIndex++; round.turnIndex = 0; round.phase = 'aim'; round.time = 0; round.accumulator = 0;
+  round.settledForShot = [];
   for (const player of round.players) { player.ball = createBall(currentHole(round).tee); player.finished = false; }
   return true;
 }
@@ -96,6 +110,9 @@ export function restoreRound(value: unknown): Round | null {
       if (!Array.isArray(p.pickedUp) || p.pickedUp.length !== HOLES.length || p.pickedUp.some(value => typeof value !== 'boolean')) return null;
     }
     if (new Set(round.players.map(p => p.id)).size !== round.players.length) return null;
+    if (round.settledForShot !== undefined && (!Array.isArray(round.settledForShot) ||
+      round.settledForShot.some(id => typeof id !== 'string' || !round.players.some(p => p.id === id)) ||
+      new Set(round.settledForShot).size !== round.settledForShot.length)) return null;
     const copy = JSON.parse(JSON.stringify(round)) as Round;
     copy.accumulator = 0;
     return copy;

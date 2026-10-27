@@ -1,5 +1,22 @@
 # Twist Putt acceptance ledger
 
+## 2026-10-27 — collision source publication handover
+
+- Request: commit and push the opponent-ball collision changes to the existing GitHub repository.
+- Scope: collision physics, multiplayer turn/scoring rules, save restoration, rendering/help, regression tests, project records and the native setup screenshot.
+- Validation: the implementation handover's 151 passing tests, three optional skips, successful native package and Board installation apply to this unchanged game code. No new physical playtest is claimed.
+- Destination: `main` in `https://github.com/Kevinmthau/Board-puttputt`.
+
+## 2026-10-27 — opponent-ball collisions
+
+- Request: allow the player's ball to hit opponents' balls, superseding the original noncolliding-opponent rule.
+- Source: shared ball simulation transfers momentum for direct hits, glancing hits and chains; played balls render solid. Unplayed shared-tee balls and finished balls remain out of collision play. Turns wait for all balls, sinks and water penalties belong to the affected owner, and water-returned balls wait out the shot. Saved collision state follows profile identity when session IDs change.
+- Automated: `npm test` passed 154 tests: 151 passed, zero failures, three existing optional catalog-wide skips. Coverage includes 18 physics tests, 16 round tests, and the assembled application journey through setup, play, pause/help, recovery, all nine holes and rematch. New save-session-ID regression failed before the fix and passed afterward. The four-player route now checks valid completion with collisions; the solo actual-gesture route still finishes in 24 strokes.
+- Browser: inspected title, setup, First Green and all four help pages in the actual Vite app. Updated bumping text is legible. Ball-to-ball interactions are covered by automated simulation; a manual browser collision playtest was not performed.
+- Package: strict TypeScript and `npm run pack` pass; 16 native files, bundle `index-Dfq7cjx-.js`, platform `bd8af67134c7d8b0`. Package SHA-256: `e9ee38b09f413931db074bbe8231e7370bc50e864793cf6abd739ef6459ac762`. Original Sports model SHA-256 is unchanged.
+- Board: installed and launched on KT's Board. Native logs show `hidden=false`, first frame at 1920 px, running audio, and recognized Sports pieces, with no JavaScript exception. Only the existing optional font-config/favicon warnings appeared. `screenshots/board-ball-collisions.png` shows the native player selector over game setup, not a collision or completed physical playtest.
+- Human: two-player physical collision feel remains unverified. At this implementation handover, the changes remained uncommitted; publication was requested in the following handover.
+
 ## 2026-10-27 — first playable milestone
 
 - Request: nine-hole Board Sports mini golf with twist-speed putting, built from Studio and installed on KT’s Board.

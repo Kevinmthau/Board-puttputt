@@ -221,14 +221,18 @@ test('real application supports setup, rotational strokes, ownership, recovery, 
   assert.ok(s.round!.players.every(p => p.scores.every(score => score === 0)));
   assert.ok(saves > 20, 'The real flow did not save its progress');
 
+  // Change setup releases the old seats. Lift before entering it, then place at the
+  // intended edges so incidental final-hole positions do not choose the new seats.
+  const existing = snapshot().pieces.filter(p => p.present);
+  existing.forEach(p => emit(p.contactId, p.glyphId, p.x, p.y, p.orientation, BoardContactPhase.Ended));
+  frames(14);
   menuAction!('setup'); frames();
   for (let i = 0; i < 2; i++) { button(BUTTONS.addPlayer); for (let j = 0; j < 6; j++) await Promise.resolve(); frames(); }
-  const existing = snapshot().pieces.filter(p => p.present);
-  const first = existing.find(p => p.glyphId === 1)!, second = existing.find(p => p.glyphId === 2)!;
-  emit(first.contactId, 1, 480, 930, 270); emit(second.contactId, 2, 1000, 150, 90); frames();
+  emit(60, 1, 480, 930, 270, BoardContactPhase.Began); frames();
+  emit(61, 2, 1000, 150, 90, BoardContactPhase.Began); frames();
   emit(70, 1, 140, 540, 0, BoardContactPhase.Began); frames();
   emit(71, 4, 1780, 540, 180, BoardContactPhase.Began); frames();
-  assert.equal(snapshot().seats.length, 4); assert.ok(snapshot().seats.every(p => p.present));
+  assert.equal(snapshot().seats.length, 4); assert.ok(snapshot().seats.every(p => p.present), JSON.stringify(snapshot()));
   const requests = addRequests; button(BUTTONS.addPlayer); await Promise.resolve(); assert.equal(addRequests, requests);
   button(BUTTONS.start); frames();
   assert.equal(snapshot().mode, 'play'); assert.equal(snapshot().round!.players.length, 4);
@@ -271,4 +275,27 @@ test('real application supports setup, rotational strokes, ownership, recovery, 
       menuAction!('setup'); frames(); button(BUTTONS.back);
     }
   }
+
+  // The platform can deliver a mid-roll save while a returning profile receives
+  // a new session ID. The water-reset opponent must stay excluded for this shot.
+  const rollingRestore = JSON.parse(JSON.stringify(validSave));
+  rollingRestore.round.phase = 'roll';
+  rollingRestore.round.players[0].scores[0] = 1;
+  rollingRestore.round.players[0].ball.state = 'moving';
+  rollingRestore.round.players[0].ball.vx = 300;
+  rollingRestore.round.players[1].scores[0] = 2;
+  rollingRestore.round.settledForShot = ['20'];
+  const returningProfile = players.find(p => p.playerId === 'profile-2')!;
+  returningProfile.sessionId = 200;
+  rosterChanges.forEach(fn => fn());
+  persisted = rollingRestore;
+  restoreListeners.forEach(fn => fn());
+  button(BUTTONS.continue);
+  const restoredRolling = snapshot().round!;
+  assert.equal(snapshot().mode, 'play');
+  assert.equal(restoredRolling.phase, 'roll', 'Continue ended a shot that was still moving');
+  assert.equal(restoredRolling.players[1].id, '200');
+  assert.deepEqual(restoredRolling.settledForShot, ['200'], 'Water-reset exclusion kept the obsolete session ID');
+  assert.equal(restoredRolling.players[1].ball.state, 'ready');
+  assert.equal(restoredRolling.players[1].scores[0], 2, 'Continue added a second water penalty');
 });

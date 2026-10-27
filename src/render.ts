@@ -323,9 +323,10 @@ function playScreen(ctx:CanvasRenderingContext2D,s:RenderState) {
   const active=activePlayer(round);
   const ordered=round.players.map((p,index)=>({p,index})).sort((a,b)=>Number(a.p.id===active.id)-Number(b.p.id===active.id));
   for(const {p,index} of ordered){if(p.finished||p.ball.state==='sunk')continue;const b=p.ball,isActive=p.id===active.id;
-    if(isActive&&b.state==='ready'){ctx.strokeStyle='#fff6cf';ctx.lineWidth=3;ctx.setLineDash([3,8]);ctx.beginPath();ctx.arc(b.x,b.y,27+Math.sin(s.now/280)*2,0,TAU);ctx.stroke();ctx.setLineDash([]);}
+    if(isActive&&round.phase==='aim'&&b.state==='ready'){ctx.strokeStyle='#fff6cf';ctx.lineWidth=3;ctx.setLineDash([3,8]);ctx.beginPath();ctx.arc(b.x,b.y,27+Math.sin(s.now/280)*2,0,TAU);ctx.stroke();ctx.setLineDash([]);}
     if(b.state==='moving'&&Math.hypot(b.vx,b.vy)>1){const speed=Math.hypot(b.vx,b.vy);for(let i=5;i>0;i--)disk(ctx,b.x-b.vx/speed*i*9,b.y-b.vy/speed*i*9,Math.max(2,10-i),i%2?'#fff6cf33':'#fff6cf55');}
-    ball(ctx,b.x,b.y,b.r,index,isActive?1:.4);
+    const inPlay=(isActive||p.scores[round.holeIndex]>0)&&!round.settledForShot?.includes(p.id);
+    ball(ctx,b.x,b.y,b.r,index,inPlay?1:.4);
   }
   if(s.club){
     const c=s.club,rad=c.facingDeg*Math.PI/180,end={x:c.x+Math.cos(rad)*240,y:c.y+Math.sin(rad)*240};
@@ -346,7 +347,7 @@ function helpScreen(ctx:CanvasRenderingContext2D,s:RenderState) {
   titleBackdrop??=bake(titleWorld);ctx.drawImage(titleBackdrop,0,0);ctx.fillStyle='#dce9bfeb';ctx.fillRect(0,0,1920,1080);
   const step=((s.helpStep%4)+4)%4;
   const headings=['PLACE BESIDE THE BALL','SWEEP THROUGH THE BALL','TWIST TO CONTROL POWER','FEWEST STROKES WINS'];
-  const captions=['Your piece can stand on the scenery.','The line is ready right away.','Faster twist. Stronger putt.','Take one shot each. Play all nine holes.'];
+  const captions=['Your piece can stand on the scenery.','The line is ready right away.','Faster twist. Stronger putt.','Take one shot each. You can bump other balls.'];
   text(ctx,'HOW TO PUTT',960,110,64);text(ctx,`${step+1} / 4`,960,179,32,'#608357');
   roundRect(ctx,330,250,1260,540,36);ctx.fillStyle='#78a768';ctx.fill();ctx.strokeStyle='#a6c489';ctx.lineWidth=8;ctx.stroke();
   picture(ctx,1,390,350,250,290);text(ctx,'BOARD SPORTS',515,693,32,'#eff3cf');

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { HOLES, type Hole } from '../src/course';
-import { createBall, stepBall, strikeBall } from '../src/physics';
+import { createBall, stepBall, stepBalls, strikeBall } from '../src/physics';
 
 const simulate = (ball: ReturnType<typeof createBall>, hole: Hole, seconds = 10) => {
   const events = [];
@@ -98,4 +98,100 @@ test('a closed gate blocks a shot and its opening admits the same shot', () => {
   assert.equal(closedHit, true);
   assert.ok(closed.x < 800);
   assert.ok(open.x > 800);
+});
+
+const energy = (balls: ReturnType<typeof createBall>[]) => balls.reduce((sum, ball) => sum + ball.vx ** 2 + ball.vy ** 2, 0);
+
+test('a direct hit transfers momentum to a resting opponent without adding energy', () => {
+  const a = createBall({ x: 500, y: 540 }), b = createBall({ x: 550, y: 540 });
+  const safe = { ...b.lastSafe };
+  strikeBall(a, { x: 500, y: 0 });
+  const initialEnergy = energy([a, b]);
+  const events = stepBalls([a, b], HOLES[0], 0.1, 0);
+  assert.equal(b.state, 'moving');
+  assert.ok(b.x > 565);
+  assert.ok(b.vx > a.vx + 300);
+  assert.equal(a.vy, 0); assert.equal(b.vy, 0);
+  assert.ok(energy([a, b]) < initialEnergy);
+  assert.deepEqual(b.lastSafe, safe, 'contact must preserve the shot-start recovery position');
+  assert.ok(events.some(event => event.type === 'bounce' && event.ballIndex === 1));
+});
+
+test('a glancing hit deflects both balls to opposite sides of the shot', () => {
+  const a = createBall({ x: 500, y: 540 }), b = createBall({ x: 550, y: 558 });
+  strikeBall(a, { x: 500, y: 0 });
+  stepBalls([a, b], HOLES[0], 0.1, 0);
+  assert.ok(a.vx > 0 && a.vy < 0);
+  assert.ok(b.vx > 0 && b.vy > 0);
+  assert.ok(Math.hypot(a.x - b.x, a.y - b.y) >= a.r + b.r);
+  assert.ok(energy([a, b]) < 500 ** 2);
+});
+
+test('opposing full-speed balls collide instead of tunneling through each other', () => {
+  const a = createBall({ x: 500, y: 540 }), b = createBall({ x: 600, y: 540 });
+  strikeBall(a, { x: 1500, y: 0 }); strikeBall(b, { x: -1500, y: 0 });
+  stepBalls([a, b], HOLES[0], 0.08, 0);
+  assert.ok(a.x < b.x);
+  assert.ok(a.vx < -1000 && b.vx > 1000);
+  assert.ok(energy([a, b]) < 2 * 1500 ** 2);
+});
+
+test('a chain collision can set all four balls in motion', () => {
+  const balls = [500, 533, 566, 599].map(x => createBall({ x, y: 540 }));
+  strikeBall(balls[0], { x: 800, y: 0 });
+  stepBalls(balls, HOLES[0], 0.06, 0);
+  assert.ok(balls.every(ball => ball.state === 'moving'));
+  assert.ok(balls[3].vx > 500 && balls[3].x > 610);
+  assert.ok(energy(balls) < 800 ** 2);
+});
+
+test('overlapping balls separate finitely and resting pairs remain undisturbed', () => {
+  const a = createBall({ x: 500, y: 540 }), b = createBall({ x: 500, y: 540 });
+  assert.deepEqual(stepBalls([a, b], HOLES[0], 0.1, 0), []);
+  assert.equal(a.x, 500); assert.equal(b.x, 500);
+  strikeBall(a, { x: 300, y: 0 });
+  stepBalls([a, b], HOLES[0], 0.1, 0);
+  assert.ok([a.x, a.y, a.vx, a.vy, b.x, b.y, b.vx, b.vy].every(Number.isFinite));
+  assert.ok(Math.hypot(a.x - b.x, a.y - b.y) >= a.r + b.r);
+  assert.ok(energy([a, b]) <= 300 ** 2);
+});
+
+test('sunk balls cannot be knocked back out of the cup', () => {
+  const a = createBall({ x: 1300, y: 540 }), b = createBall(HOLES[0].cup);
+  b.state = 'sunk';
+  strikeBall(a, { x: 1500, y: 0 });
+  stepBalls([a, b], HOLES[0], 0.06, 0);
+  assert.equal(b.state, 'sunk');
+  assert.equal(b.x, HOLES[0].cup.x); assert.equal(b.y, HOLES[0].cup.y);
+  assert.ok(a.x > b.x);
+});
+
+test('a bumped opponent can sink and its sink event identifies that ball', () => {
+  const a = createBall({ x: 1290, y: 540 }), b = createBall({ x: 1325, y: 540 });
+  strikeBall(a, { x: 200, y: 0 });
+  const events = [];
+  for (let i = 0; i < 60; i++) events.push(...stepBalls([a, b], HOLES[0], 1 / 120, i / 120));
+  assert.equal(b.state, 'sunk');
+  assert.equal(events.filter(event => event.type === 'sink' && event.ballIndex === 1).length, 1);
+});
+
+test('a bumped ball returns from water once and stays excluded for the rest of the step', () => {
+  const hole: Hole = { ...HOLES[0], water: [{ x: 700, y: 250, w: 180, h: 580 }] };
+  const a = createBall({ x: 660, y: 540 }), b = createBall({ x: 690, y: 540 });
+  strikeBall(a, { x: 1000, y: 0 });
+  const events = stepBalls([a, b], hole, 0.1, 0);
+  assert.equal(events.filter(event => event.type === 'water' && event.ballIndex === 1).length, 1);
+  assert.equal(b.state, 'ready'); assert.equal(b.x, 690); assert.equal(b.vx, 0);
+});
+
+test('a ball pinned against a rail rebounds without escaping or gaining energy', () => {
+  const hole: Hole = { ...HOLES[0], walls: [...HOLES[0].walls, { a: { x: 800, y: 350 }, b: { x: 800, y: 700 } }] };
+  const a = createBall({ x: 745, y: 540 }), b = createBall({ x: 786, y: 540 });
+  strikeBall(a, { x: 700, y: 0 });
+  for (let i = 0; i < 600 && [a, b].some(ball => ball.state === 'moving'); i++) {
+    stepBalls([a, b], hole, 1 / 120, i / 120);
+    assert.ok(a.x <= 786.01 && b.x <= 786.01);
+    assert.ok(energy([a, b]) <= 700 ** 2);
+  }
+  assert.equal(a.state, 'ready'); assert.equal(b.state, 'ready');
 });

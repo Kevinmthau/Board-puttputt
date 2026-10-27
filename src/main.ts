@@ -81,7 +81,9 @@ function continueRun(){
  const mapped=saved.seats.map(s=>({old:s,player:s.playerId?roster.find(p=>p.playerId===s.playerId):roster.find(p=>String(p.sessionId)===s.id)}));
  if(mapped.some(s=>!s.player)||new Set(mapped.map(s=>s.player?.sessionId)).size!==mapped.length){say('Add the saved players, then choose Continue.',8);mode='setup';return;}
  seats=mapped.map(({old,player})=>({player:player!,edge:old.edge,glyphId:old.glyphId}));
- for(const p of restored.players){const m=mapped.find(m=>m.old.id===p.id);if(m)p.id=String(m.player!.sessionId);}
+ const ids=new Map(mapped.map(({old,player})=>[old.id,String(player!.sessionId)]));
+ for(const p of restored.players)p.id=ids.get(p.id)!;
+ if(restored.settledForShot)restored.settledForShot=restored.settledForShot.map(id=>ids.get(id)!);
  for(const p of tracker.identities)p.owner=null;
  round=restored;mode=round.phase==='complete'?'over':'play';completionAt=0;lastTurn='';swing.reset();
  for(const p of tracker.identities.filter(p=>p.present))bind(p);

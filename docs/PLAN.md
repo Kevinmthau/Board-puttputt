@@ -14,7 +14,7 @@ The club begins at the real front outline and reaches 240 px from the piece cent
 
 The user tested the game on KT’s Board and reported that the line often crossed the ball without firing, then requested “make the line active at all times.” This overrides the initial settled-piece, clear-line, deliberate-backswing and 120–230 px stance gates. A rotating line is immediately live for the current player's stopped ball, including when it starts in contact. Natural position drift while twisting is allowed. Pure placement or translation, missing tracking history, pause, and inactive turns do not create strokes. A small angle tolerance filters sensor jitter. Swept contact catches fast swings, and a committed shot remains locked until the ball rests. Physical pieces are controllers and may stand on scenery. Only balls collide with course geometry.
 
-Take one shot each in roster order, skipping finished players. Inactive balls are visible and noncolliding. Water adds one penalty and returns to the pre-shot position. Seven total strokes ends a hole with a pickup. All players finish before advancing. Lowest total wins; equal totals share the win.
+Take one shot each in roster order, skipping finished players. Balls can hit and move opponents' balls, including glancing hits and chain reactions. After a player's first putt, their ball stays solid between turns; unplayed balls waiting at the shared tee remain noncolliding. Sunk and picked-up balls are out of play. Wait for every moving ball to settle before handing over the turn. Bumping an opponent adds no putt to their score; sinking their ball finishes their hole with their existing score. Water adds one penalty to the affected ball's owner and returns that ball to its position at the start of the current shot; it waits out the rest of that shot to avoid repeat penalties. Seven total strokes ends a hole with a pickup, including when a bump causes the seventh stroke via water. All players finish before advancing. Lowest total wins; equal totals share the win.
 
 | Hole | Par | Challenge |
 |---|---|---|
@@ -62,7 +62,7 @@ Preserve TypeScript, Vite, Canvas 2D, 1920×1080 and vendored SDK beta.8. Sports
 
 ## Decisions
 User: nine holes, Sports pieces, twist-speed power, tangent shots, nearby stance, outdoor look, 1–4 humans, alternating shots, family-friendly rules, KT’s Board installation.
-Approved builder defaults: Twist Putt title, par 27, initial tuning above, ghost inactive balls, deterministic hazards, no cloud hosting.
+Approved builder defaults: Twist Putt title, par 27, initial tuning above, deterministic hazards, no cloud hosting. The original ghost-inactive-balls default was superseded on October 27, 2026 by the user's request to allow their ball to hit opponents' balls. Builder decisions for that change: equal-mass rebounds, shared-tee protection until each first putt, no extra putt charged for a bump, owner-based water penalties, and turn handoff after all balls settle.
 On October 27, 2026, the user requested committing and publishing the source to a public GitHub repository and confirmed authorization to publish the bundled SDK. The destination is `Kevinmthau/Board-puttputt`; publishing source does not change the game's hosting or runtime.
 The requested forehead line is gameplay emitted from the front outline, not decoration around a controller.
 References: https://en.wikipedia.org/wiki/Miniature_golf and https://monsterminigolf.com/blog/mini-golf/how-to-play-mini-golf/.

@@ -55,61 +55,123 @@ function returnSafe(ball: Ball): void {
   ball.vx = 0; ball.vy = 0; ball.state = 'ready'; ball.restTime = 0;
 }
 
-/** The caller normally supplies 1/120 s. Adaptive spatial steps prevent thin-wall tunneling. */
-export function stepBall(ball: Ball, hole: Hole, dt: number, time: number): PhysicsEvent[] {
-  if (ball.state !== 'moving' || dt <= 0 || !Number.isFinite(dt)) return [];
-  const events: PhysicsEvent[] = [];
-  const duration = Math.min(dt, 0.1);
-  const count = Math.max(1, Math.ceil(duration / FIXED_STEP), Math.ceil(Math.hypot(ball.vx, ball.vy) * duration / 6));
-  const step = duration / count;
+export interface MultiBallPhysicsEvent extends PhysicsEvent { ballIndex: number; }
+
+/** Equal-mass contact: transfer the normal velocity and preserve the sideways component. */
+function collideBalls(a: Ball, b: Ball): number {
+  if (a.state === 'sunk' || b.state === 'sunk' || (a.state !== 'moving' && b.state !== 'moving')) return 0;
+  const dx = b.x - a.x, dy = b.y - a.y, distance = Math.hypot(dx, dy);
+  const diameter = a.r + b.r;
+  if (distance >= diameter) return 0;
+  const relativeX = a.vx - b.vx, relativeY = a.vy - b.vy;
+  const relativeSpeed = Math.hypot(relativeX, relativeY);
+  const nx = distance > 0.0001 ? dx / distance : relativeSpeed ? relativeX / relativeSpeed : 1;
+  const ny = distance > 0.0001 ? dy / distance : relativeSpeed ? relativeY / relativeSpeed : 0;
+  const correction = (diameter - distance + 0.01) / 2;
+  a.x -= nx * correction; a.y -= ny * correction;
+  b.x += nx * correction; b.y += ny * correction;
+  // Even a position-only correction must run through water, cup and rail checks.
+  for (const ball of [a, b]) if (ball.state === 'ready') {
+    ball.state = 'moving'; ball.restTime = 0;
+  }
+  const approach = relativeX * nx + relativeY * ny;
+  if (approach <= 0) return 0;
+  const impulse = (1 + 0.9) * approach / 2;
+  a.vx -= impulse * nx; a.vy -= impulse * ny;
+  b.vx += impulse * nx; b.vy += impulse * ny;
+  return approach;
+}
+
+function collideCourse(ball: Ball, hole: Hole, time: number): number {
   let hardestBounce = 0;
-  for (let i = 0; i < count && ball.state === 'moving'; i++) {
-    ball.tunnelCooldown = Math.max(0, ball.tunnelCooldown - step);
-    for (const slope of hole.slopes) if (pointInRect(ball, slope)) {
-      ball.vx += slope.ax * step; ball.vy += slope.ay * step;
+  for (const wall of hole.walls) hardestBounce = Math.max(hardestBounce, collideSegment(ball, wall));
+  for (const gate of hole.gates) if (!gateIsOpen(gate, time)) hardestBounce = Math.max(hardestBounce, collideSegment(ball, gate));
+  for (const bumper of hole.bumpers) {
+    const dx = ball.x - bumper.x, dy = ball.y - bumper.y, distance = Math.hypot(dx, dy);
+    if (distance < ball.r + bumper.r) {
+      const speed = Math.hypot(ball.vx, ball.vy) || 1;
+      hardestBounce = Math.max(hardestBounce, rebound(ball, distance ? dx / distance : -ball.vx / speed, distance ? dy / distance : -ball.vy / speed, ball.r + bumper.r - distance));
     }
-    ball.x += ball.vx * step; ball.y += ball.vy * step;
-    for (let pass = 0; pass < 2; pass++) {
-      for (const wall of hole.walls) hardestBounce = Math.max(hardestBounce, collideSegment(ball, wall));
-      for (const gate of hole.gates) if (!gateIsOpen(gate, time + i * step)) hardestBounce = Math.max(hardestBounce, collideSegment(ball, gate));
-      for (const bumper of hole.bumpers) {
-        const dx = ball.x - bumper.x, dy = ball.y - bumper.y, distance = Math.hypot(dx, dy);
-        if (distance < ball.r + bumper.r) {
-          const speed = Math.hypot(ball.vx, ball.vy) || 1;
-          hardestBounce = Math.max(hardestBounce, rebound(ball, distance ? dx / distance : -ball.vx / speed, distance ? dy / distance : -ball.vy / speed, ball.r + bumper.r - distance));
+  }
+  return hardestBounce;
+}
+
+/** All live balls share spatial substeps, so they cannot pass through one another. */
+export function stepBalls(balls: Ball[], hole: Hole, dt: number, time: number): MultiBallPhysicsEvent[] {
+  if (dt <= 0 || !Number.isFinite(dt) || !balls.some(ball => ball.state === 'moving')) return [];
+  const events: MultiBallPhysicsEvent[] = [];
+  const duration = Math.min(dt, 0.1);
+  // The total kinetic-energy bound also covers speed transferred by a chain of contacts.
+  const speedBound = Math.sqrt(balls.reduce((sum, ball) => sum + (ball.state === 'moving' ? ball.vx ** 2 + ball.vy ** 2 : 0), 0));
+  const count = Math.max(1, Math.ceil(duration / FIXED_STEP), Math.ceil(speedBound * duration / 6));
+  const step = duration / count;
+  const hardestBounce = balls.map(() => 0);
+  const returned = new Set<number>();
+  const live = (index: number) => !returned.has(index) && balls[index].state === 'moving';
+  for (let i = 0; i < count; i++) {
+    for (let index = 0; index < balls.length; index++) {
+      if (!live(index)) continue;
+      const ball = balls[index];
+      ball.tunnelCooldown = Math.max(0, ball.tunnelCooldown - step);
+      for (const slope of hole.slopes) if (pointInRect(ball, slope)) {
+        ball.vx += slope.ax * step; ball.vy += slope.ay * step;
+      }
+      ball.x += ball.vx * step; ball.y += ball.vy * step;
+      for (let pass = 0; pass < 2; pass++) hardestBounce[index] = Math.max(hardestBounce[index], collideCourse(ball, hole, time + i * step));
+      if (ball.tunnelCooldown === 0) {
+        const tunnel = hole.tunnels.find(t => Math.hypot(ball.x - t.entry.x, ball.y - t.entry.y) < t.entry.r);
+        if (tunnel) {
+          const speed = Math.hypot(ball.vx, ball.vy) * tunnel.speedScale;
+          const length = Math.hypot(tunnel.direction.x, tunnel.direction.y) || 1;
+          ball.x = tunnel.exit.x; ball.y = tunnel.exit.y;
+          ball.vx = tunnel.direction.x / length * speed; ball.vy = tunnel.direction.y / length * speed;
+          ball.tunnelCooldown = 0.6;
+          events.push({ type: 'tunnel', x: ball.x, y: ball.y, ballIndex: index });
         }
       }
     }
-    if (ball.tunnelCooldown === 0) {
-      const tunnel = hole.tunnels.find(t => Math.hypot(ball.x - t.entry.x, ball.y - t.entry.y) < t.entry.r);
-      if (tunnel) {
-        const speed = Math.hypot(ball.vx, ball.vy) * tunnel.speedScale;
-        const length = Math.hypot(tunnel.direction.x, tunnel.direction.y) || 1;
-        ball.x = tunnel.exit.x; ball.y = tunnel.exit.y;
-        ball.vx = tunnel.direction.x / length * speed; ball.vy = tunnel.direction.y / length * speed;
-        ball.tunnelCooldown = 0.6;
-        events.push({ type: 'tunnel', x: ball.x, y: ball.y });
+    for (let pass = 0; pass < 2; pass++) {
+      for (let a = 0; a < balls.length; a++) for (let b = a + 1; b < balls.length; b++) {
+        if (returned.has(a) || returned.has(b)) continue;
+        const strength = collideBalls(balls[a], balls[b]);
+        hardestBounce[a] = Math.max(hardestBounce[a], strength);
+        hardestBounce[b] = Math.max(hardestBounce[b], strength);
+      }
+      // Pair separation can push a ball against a rail or bumper.
+      if (balls.length > 1) for (let index = 0; index < balls.length; index++) if (live(index)) {
+        hardestBounce[index] = Math.max(hardestBounce[index], collideCourse(balls[index], hole, time + i * step));
       }
     }
-    if (isWater(ball, hole) || !pointInPolygon(ball, hole.outline)) {
-      events.push({ type: 'water', x: ball.x, y: ball.y });
-      returnSafe(ball); break;
-    }
-    const speed = Math.hypot(ball.vx, ball.vy);
-    if (speed <= 300 && Math.hypot(ball.x - hole.cup.x, ball.y - hole.cup.y) <= hole.cup.r - ball.r * 0.45) {
-      ball.x = hole.cup.x; ball.y = hole.cup.y; ball.vx = 0; ball.vy = 0; ball.state = 'sunk';
-      events.push({ type: 'sink', x: ball.x, y: ball.y }); break;
-    }
-    const drag = hole.sand.some(r => pointInRect(ball, r)) ? 980 : 320;
-    const nextSpeed = Math.max(0, speed - drag * step);
-    ball.vx = speed ? ball.vx * nextSpeed / speed : 0;
-    ball.vy = speed ? ball.vy * nextSpeed / speed : 0;
-    ball.restTime = nextSpeed < 14 ? ball.restTime + step : 0;
-    if (ball.restTime >= 0.12) {
-      ball.vx = 0; ball.vy = 0; ball.state = 'ready';
-      events.push({ type: 'rest', x: ball.x, y: ball.y });
+    for (let index = 0; index < balls.length; index++) {
+      if (!live(index)) continue;
+      const ball = balls[index];
+      if (isWater(ball, hole) || !pointInPolygon(ball, hole.outline)) {
+        events.push({ type: 'water', x: ball.x, y: ball.y, ballIndex: index });
+        returnSafe(ball); returned.add(index); continue;
+      }
+      const speed = Math.hypot(ball.vx, ball.vy);
+      if (speed <= 300 && Math.hypot(ball.x - hole.cup.x, ball.y - hole.cup.y) <= hole.cup.r - ball.r * 0.45) {
+        ball.x = hole.cup.x; ball.y = hole.cup.y; ball.vx = 0; ball.vy = 0; ball.state = 'sunk';
+        events.push({ type: 'sink', x: ball.x, y: ball.y, ballIndex: index }); continue;
+      }
+      const drag = hole.sand.some(r => pointInRect(ball, r)) ? 980 : 320;
+      const nextSpeed = Math.max(0, speed - drag * step);
+      ball.vx = speed ? ball.vx * nextSpeed / speed : 0;
+      ball.vy = speed ? ball.vy * nextSpeed / speed : 0;
+      ball.restTime = nextSpeed < 14 ? ball.restTime + step : 0;
+      if (ball.restTime >= 0.12) {
+        ball.vx = 0; ball.vy = 0; ball.state = 'ready';
+        events.push({ type: 'rest', x: ball.x, y: ball.y, ballIndex: index });
+      }
     }
   }
-  if (hardestBounce > 25) events.push({ type: 'bounce', x: ball.x, y: ball.y, strength: hardestBounce });
+  for (let index = 0; index < balls.length; index++) if (hardestBounce[index] > 25) {
+    events.push({ type: 'bounce', x: balls[index].x, y: balls[index].y, strength: hardestBounce[index], ballIndex: index });
+  }
   return events;
+}
+
+/** Compatibility entry point for a course with only one ball. */
+export function stepBall(ball: Ball, hole: Hole, dt: number, time: number): PhysicsEvent[] {
+  return stepBalls([ball], hole, dt, time).map(({ ballIndex: _ballIndex, ...event }) => event);
 }

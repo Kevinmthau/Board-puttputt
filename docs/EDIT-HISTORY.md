@@ -1,5 +1,13 @@
 # Edit history
 
+## 2026-10-27 — publish opponent-ball collisions
+
+The user requested committing and pushing the completed collision revision to the existing `Kevinmthau/Board-puttputt` GitHub repository. Included the implementation, regression tests, updated rules and validation records, and native screenshot in the source handover. The game code and completed checks are unchanged from the implementation handover.
+
+## 2026-10-27 — opponent-ball collisions
+
+The user requested that their ball be able to hit opponents' balls. Replaced the original ghost-opponent rule with equal-mass rebounds, glancing hits and chain reactions. Balls enter collision play after their first putt because unplayed balls share the tee. Turns wait for every rolling ball, and a bumped ball can sink or enter water with the outcome assigned to its owner. Water resets use the start of the current shot, with a returned ball excluded for the remainder of that shot; save/restore retains this state. Played opponents render at full opacity, the aiming pulse waits until the turn is ready, and help mentions bumping other balls. Verification is recorded in ACCEPTANCE-LEDGER.
+
 ## 2026-10-27 — initial implementation
 User approved the complete Twist Putt plan. Created a fresh Studio game with a new app identity, Sports recognition and all nine planned holes. See PLAN and ACCEPTANCE-LEDGER for decisions and verification.
 

@@ -13,3 +13,5 @@
 
 Sports model SHA-256: `4d75343e149b72f8410cad10f518c64791634ae6e6932880088a34c164026ad9`.
 No third-party stock art or network-loaded fonts are required.
+
+October 27, 2026 collision revision: no new media assets. Opponent-ball feedback reuses the original ball artwork and procedural bounce sound; the Sports model, canonical art, font and vendored SDK remain unchanged.
