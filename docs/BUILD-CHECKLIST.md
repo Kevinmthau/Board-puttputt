@@ -1,6 +1,6 @@
 # Build checklist
 - [x] Approved design, exact starter, Sports model and assets.
-- [ ] First-hole core loop builds, packs and answers a placed piece.
+- [x] First-hole core loop builds, packs and answers a placed piece. Browser: placed, moved, drew back and struck clockwise; ball moved along the sweep.
 - [ ] Players can place beside the ball, clear the line and sweep to strike.
 - [ ] Power follows twist speed in both directions; jitter and movement do not fire.
 - [ ] Nine holes, hazards and safe routes work.
