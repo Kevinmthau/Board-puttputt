@@ -18,8 +18,10 @@ type Save = { schema: 1; round: Round; seats: { id:string;playerId:string;edge:E
 let seats: Seat[] = [], footprints: PieceFootprints | null = null, round: Round | null = null;
 let mode: RenderState['mode'] = 'title', beforeHelp: RenderState['mode'] = 'title', helpStep = 0;
 let running = true, last = 0, completionAt = 0, rosterAt = -Infinity, ambientAt = 0, savedAt = 0;
+let bootReady = false, animationFrame: number | null = null;
 let message = '', messageUntil = 0, lastTurn = '', lastEpoch = '', saved: Save | null = null;
 const contacts = new Map<number, BoardContact>();
+const observedEdges = new Map<number, Edge>(), pendingSelectors = new Map<number, Edge>();
 let taps: {x:number;y:number}[] = [];
 let firstFrame = true;
 const effects: RenderState['effects'] = [];
@@ -29,31 +31,63 @@ const canStart = () => seats.length>0 && seats.length<=4 && seats.every(s=>piece
 
 function syncRoster(){
  const people = seated().slice(0,4);
- if(mode==='play'||mode==='help'||mode==='over') {
-  for(const s of seats){const p=people.find(p=>p.sessionId===s.player.sessionId);if(p)s.player=p;}
-  return;
+ if(round) {
+  const changed=people.length!==seats.length||seats.some(s=>!people.some(p=>p.sessionId===s.player.sessionId));
+  if(!changed){
+   for(const s of seats)s.player=people.find(p=>p.sessionId===s.player.sessionId)!;
+   return;
+  }
+  // A round cannot keep taking turns for players the system has removed.
+  // Preserve its save before reconciling seats so Continue can restore it later.
+  saveRun();round=null;mode='setup';beforeHelp='setup';completionAt=0;lastTurn='';swing.reset();
+  say('Players changed. Confirm your pieces and tee off.',6);
  }
  seats = people.map(player => seats.find(s=>s.player.sessionId===player.sessionId) ?? {player,edge:null,glyphId:null});
  for(const s of seats){const p=people.find(p=>p.sessionId===s.player.sessionId);if(p)s.player=p;}
  for(const p of tracker.identities)if(!seats.some(s=>s.player.sessionId===p.owner))p.owner=null;
 }
+function assignPiece(p:TrackedPiece,owner:number){
+ for(const other of tracker.identities)if(other!==p&&other.owner===owner)other.owner=null;
+ p.owner=owner;
+}
 function bind(p:TrackedPiece){
  if(p.owner!==null&&seats.some(s=>s.player.sessionId===p.owner))return;
  const missing = seats.filter(s=>s.glyphId===p.glyphId&&!pieceFor(s.player.sessionId));
- if(missing.length===1){p.owner=missing[0].player.sessionId;return;}
+ if(missing.length===1){assignPiece(p,missing[0].player.sessionId);return;}
  const edge=nearestEdge(p.x,p.y), gap={bottom:1080-p.y,top:p.y,left:p.x,right:1920-p.x}[edge];
  // Identical pieces lifted together are intentionally ambiguous after a far return.
  // Returning one to its owner's original edge is an explicit recovery gesture.
  if(mode!=='setup'){
   const returning=gap<=240?missing.find(s=>s.edge===edge):null;
-  if(returning)p.owner=returning.player.sessionId;
+  if(returning)assignPiece(p,returning.player.sessionId);
   return;
  }
  if(gap>300)return;
  const occupied=seats.find(s=>s.edge===edge&&pieceFor(s.player.sessionId));
  if(occupied)return;
  const s=seats.find(s=>s.edge===edge&&!pieceFor(s.player.sessionId))??seats.find(s=>s.edge===null);
- if(s){s.edge=edge;s.glyphId=p.glyphId;p.owner=s.player.sessionId;}
+ if(s){s.edge=edge;s.glyphId=p.glyphId;assignPiece(p,s.player.sessionId);}
+}
+function updateSetupSelectors(){
+ const edges=new Map<number,Edge>();
+ const free=(edge:Edge)=>!seats.some(s=>s.edge===edge&&pieceFor(s.player.sessionId));
+ for(const p of tracker.identities){
+  if(!p.present)continue;
+  const edge=nearestEdge(p.x,p.y),gap={bottom:1080-p.y,top:p.y,left:p.x,right:1920-p.x}[edge];
+  if(gap>300)continue;
+  edges.set(p.id,edge);
+  if(mode==='setup'&&p.owner===null&&observedEdges.get(p.id)!==edge&&free(edge))pendingSelectors.set(p.id,edge);
+ }
+ // Track physical edge entries even outside setup: releasing a seat or dismissing
+ // its selector must not immediately reopen it for a piece that has not moved.
+ for(const [id,edge] of pendingSelectors){
+  const p=tracker.identities.find(p=>p.id===id);
+  if(mode!=='setup'||!p?.present||p.owner!==null||edges.get(id)!==edge||!free(edge))pendingSelectors.delete(id);
+ }
+ observedEdges.clear();for(const [id,edge] of edges)observedEdges.set(id,edge);
+ if(mode==='setup'&&seats.length<4&&!selectorOpen()&&pendingSelectors.size){
+  const id=pendingSelectors.keys().next().value!;pendingSelectors.delete(id);void addPlayer();
+ }
 }
 async function addPlayer(){
  if(seats.length>=4||selectorOpen())return;
@@ -94,6 +128,13 @@ function newRound(){
  round=createRound(seats.map(s=>String(s.player.sessionId)));mode='play';completionAt=0;lastTurn='';swing.reset();
  message='';saveRun();
 }
+function restartRound(){
+ syncRoster();
+ if(!seats.length||seats.some(s=>s.edge===null||s.glyphId===null)){
+  mode='setup';say('Place one Sports piece at each player’s edge.');return;
+ }
+ round=createRound(seats.map(s=>String(s.player.sessionId)));mode='play';completionAt=0;lastTurn='';swing.reset();saveRun();
+}
 function setup(){
  saveRun();mode='setup';round=null;swing.reset();completionAt=0;
  for(const p of tracker.identities)p.owner=null;
@@ -118,7 +159,7 @@ function handleUI(){
  }else if(mode==='help'){
   if(tapped('back'))closeHelp();else if(tapped('next')){if(helpStep>=3)closeHelp();else helpStep++;}
  }else if(mode==='over'){
-  if(tapped('rematch')){round=createRound(seats.map(s=>String(s.player.sessionId)));mode='play';completionAt=0;lastTurn='';swing.reset();saveRun();}
+  if(tapped('rematch'))restartRound();
   else if(tapped('setup'))setup();
  }
 }
@@ -153,8 +194,12 @@ function play(now:number,dt:number):RenderState['club']{
  return p&&fp&&front?{x:p.x,y:p.y,facingDeg:fp.facingDeg,start:front,status:swing.status}:null;
 }
 function renderSeats():RenderSeat[]{return seats.map((s,i)=>({id:String(s.player.sessionId),name:s.player.name,edge:s.edge??EDGES[i],glyphId:s.glyphId,present:!!pieceFor(s.player.sessionId)}));}
+function requestFrame(){
+ if(running&&bootReady&&animationFrame===null)animationFrame=requestAnimationFrame(frame);
+}
 function frame(now:number){
- if(!running)return;
+ animationFrame=null;
+ if(!running||!bootReady)return;
  if(firstFrame){firstFrame=false;console.info('[twist-putt] first frame '+JSON.stringify({hidden:document.hidden,canvas:canvas.getBoundingClientRect().width}));}
  const dt=Math.min(.05,last?(now-last)/1000:0);last=now;
  const changes=tracker.update([...contacts.values()],now);
@@ -162,9 +207,7 @@ function frame(now:number){
  for(const p of changes.arrivals){console.info('[twist-putt] Sports glyph '+p.glyphId+' placed');const fp=pieceFootprint(footprints,p);splashes.at(p.x,p.y,{inner:fp?.radiusPx??90,color:'#FFF2AD',sound:()=>sound('place')});}
  if(mode==='setup'&&now-rosterAt>1000){rosterAt=now;syncRoster();}
  for(const p of tracker.identities.filter(p=>p.present))bind(p);
- if(mode==='setup'&&seats.length<4&&changes.arrivals.some(p=>p.owner===null)&&!selectorOpen()){
-  const p=changes.arrivals.find(p=>p.owner===null)!;if(Math.min(p.x,1920-p.x,p.y,1080-p.y)<300)void addPlayer();
- }
+ updateSetupSelectors();
  handleUI();
  const club=mode==='play'?play(now,dt):null;
  if(mode==='help')helpStep=Math.min(3,helpStep);
@@ -174,16 +217,19 @@ function frame(now:number){
  while(effects.length>100)effects.shift();
  for(let i=effects.length-1;i>=0;i--)if(effects[i].age>1.2)effects.splice(i,1);
  drawGame(ctx,{mode,seats:renderSeats(),round,now,message,canStart:canStart(),hasSave:!!saved,helpStep,club,effects});
- splashes.update(dt);splashes.draw(ctx);taps=[];requestAnimationFrame(frame);
+ splashes.update(dt);splashes.draw(ctx);taps=[];requestFrame();
 }
-Board.application.onPause(()=>{console.info('[twist-putt] paused');saveRun();running=false;last=0;swing.reset();});
-Board.application.onResume(()=>{console.info('[twist-putt] resumed');tracker.resumed(performance.now());swing.reset();taps=[];if(!running){running=true;last=0;requestAnimationFrame(frame);}});
+Board.application.onPause(()=>{
+ console.info('[twist-putt] paused');saveRun();running=false;last=0;swing.reset();
+ if(animationFrame!==null){cancelAnimationFrame(animationFrame);animationFrame=null;}
+});
+Board.application.onResume(()=>{console.info('[twist-putt] resumed');tracker.resumed(performance.now());swing.reset();taps=[];if(!running){running=true;last=0;requestFrame();}});
 void(async()=>{
  await BoardPlatform.state.ready();syncRoster();readSave();
  BoardPlatform.state.onRestore(()=>{syncRoster();readSave();});
  if(Board.isOnDevice)Board.session.onPlayersChanged(syncRoster);
  BoardPlatform.menu.setButtons([{id:'help',title:'How to putt',icon:'square'},{id:'restart',title:'Restart course',icon:'circular_arrow'},{id:'setup',title:'Change players',icon:'left_arrow'}]);
- BoardPlatform.menu.onButton(id=>{if(id==='help')help();if(id==='restart'&&seats.length){round=createRound(seats.map(s=>String(s.player.sessionId)));mode='play';lastTurn='';completionAt=0;swing.reset();saveRun();}if(id==='setup')setup();});
+ BoardPlatform.menu.onButton(id=>{if(id==='help')help();if(id==='restart')restartRound();if(id==='setup')setup();});
  [footprints]=await Promise.all([loadPieceFootprints(),loadTitleFont(),loadArt()]);
  gameAudio();
  if(!footprints)say('Sports piece data could not load. Restart the game.',3600);
@@ -191,5 +237,5 @@ void(async()=>{
  if(host.BoardSDK?.__sim)Object.defineProperty(window,'__twistPuttSnapshot',{configurable:true,get:()=>JSON.parse(JSON.stringify({mode,round,seats:renderSeats(),swing:swing.status,pieces:tracker.identities}))});
  console.info('[twist-putt] ready: Sports, nine holes, app '+BoardPlatform.game.appId+'; running='+running+' hidden='+document.hidden);
  drawGame(ctx,{mode,seats:renderSeats(),round,now:performance.now(),message,canStart:canStart(),hasSave:!!saved,helpStep,club:null,effects});
- requestAnimationFrame(frame);
+ bootReady=true;requestFrame();
 })().catch(error=>{console.error('[twist-putt] boot failed',error);ctx.fillStyle='#173F2E';ctx.fillRect(0,0,1920,1080);ctx.font=gameFont(48);ctx.textAlign='center';ctx.fillStyle='#FFF3D9';ctx.fillText('The game could not load. Please restart it.',960,540);});

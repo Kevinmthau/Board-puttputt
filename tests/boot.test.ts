@@ -50,11 +50,12 @@ const param = () => ({ value: 1, setValueAtTime() {}, linearRampToValueAtTime() 
 const node = () => ({ connect() {}, disconnect() {}, start() {}, stop() {}, gain: param(), frequency: param(), detune: param(), Q: param() });
 
 const g = globalThis as unknown as Record<string, unknown>;
-let raf: ((ms: number) => void) | null = null;
+const pendingFrames = new Map<number, (ms: number) => void>();
+let nextFrame = 1;
 let nowMs = 1000;
 Object.defineProperty(performance, "now", { value: () => nowMs, configurable: true }); // frames and the game share one clock
-g.requestAnimationFrame = (cb: (ms: number) => void) => { raf = cb; return 1; };
-g.cancelAnimationFrame = () => { raf = null; };
+g.requestAnimationFrame = (cb: (ms: number) => void) => { const id = nextFrame++; pendingFrames.set(id, cb); return id; };
+g.cancelAnimationFrame = (id: number) => { pendingFrames.delete(id); };
 g.document = { title: "", hidden: false, fonts: { add() {}, size: 0, ready: Promise.resolve() },
   querySelector: () => fakeCanvas(), createElement: () => fakeCanvas(), addEventListener: listen, removeEventListener() {} };
 g.FontFace = class { load() { return Promise.resolve(this); } };
@@ -107,11 +108,11 @@ process.on("unhandledRejection", e => errors.push(e));
 function run(seconds: number) { // frames at 60 fps, the way a browser runs them
   for (let i = 0; i < Math.round(seconds * 60); i++) {
     nowMs += 1000 / 60;
-    const frame = raf;
-    raf = null;
-    if (!frame) return;
+    const callbacks = [...pendingFrames.values()];
+    pendingFrames.clear();
+    if (!callbacks.length) return;
     calls = [];
-    frame(nowMs);
+    for (const frame of callbacks) frame(nowMs);
     frames.push(calls);
   }
 }
@@ -149,9 +150,20 @@ function firstMove(x: number, y: number) {
 
 // One test: it is one walk through the game in one process.
 test("the game boots, draws its title, answers the first move and survives a pause", async () => {
+  await import('../src/platform-stub');
+  const platform = g.BoardPlatform as typeof BoardPlatform;
+  let finishRestore!: () => void;
+  platform.state.ready = () => new Promise(resolve => { finishRestore = () => resolve({ restored: false }); });
   await import("../src/main");
-  for (let i = 0; i < 20 && !raf; i++) await new Promise(resolve => setTimeout(resolve, 10)); // ready(), fonts, footprints
-  assert.ok(raf, "nothing asked for a frame, so the game never started");
+  // Native lifecycle callbacks may arrive while the platform is still restoring.
+  pauses.forEach(fn => fn()); resumes.forEach(fn => fn());
+  assert.equal(pendingFrames.size, 0, 'Resume started seating/rendering before platform readiness');
+  pauses.forEach(fn => fn());
+  finishRestore();
+  for (let i = 0; i < 20; i++) await new Promise(resolve => setTimeout(resolve, 5));
+  assert.equal(pendingFrames.size, 0, 'Finishing boot started the loop while paused');
+  resumes.forEach(fn => fn());
+  assert.equal(pendingFrames.size, 1, "the game must start exactly one animation loop");
 
   run(2.5);
   const title = frames[frames.length - 1];
@@ -163,6 +175,14 @@ test("the game boots, draws its title, answers the first move and survives a pau
   assert.deepEqual(errors, [], "the first move threw");
   assert.ok(firstMove(480, 810), "a piece put down near the bottom edge got no visible answer");
   assert.deepEqual(errors, [], "the second move threw");
+
+  // Opening and closing the menu within a frame must cancel the old callback.
+  for (let i = 0; i < 3; i++) {
+    pauses.forEach(fn => fn()); resumes.forEach(fn => fn());
+    assert.equal(pendingFrames.size, 1, 'A quick pause/resume duplicated the animation loop');
+  }
+  run(1);
+  assert.equal(pendingFrames.size, 1, 'Duplicate frame chains continued after resume');
 
   for (const pause of pauses) pause();
   run(1);

@@ -30,3 +30,12 @@ Evidence scope and remaining physical checks are recorded in `ACCEPTANCE-LEDGER.
 - [x] Inspect the revised game in a browser (title, setup, First Green and revised help).
 - [x] Install and inspect the revised package on KT's Board (visible first frame and setup/player selector; no collision play inferred).
 - [ ] Human two-player collision feel confirmed on Board.
+
+## Code review and fixes — October 27, 2026
+- [x] Review game rules/physics, input/seating, rendering, platform integration and packaging; independently review the final code changes.
+- [x] Fix startup/pause loop races, restart before setup, stale roster turns and duplicate piece ownership.
+- [x] Fix free-edge selector entry/dismissal behavior and pause identity recovery after movement, delayed detection and repeated menus.
+- [x] Restore the 48 px setup-indicator inset and platform ownership of the page title.
+- [x] Regression suite: 157 tests, 154 passed, zero failures, three existing optional catalog skips; strict TypeScript, native package and browser build pass; dependency audit has zero findings.
+- [x] Browser: packaged platform menu, restart-before-setup, piece binding, tee off, rotational shot, pause/help and return to the same score inspected.
+- [ ] Physical Board verification of this review revision (not performed in this source-review handover).

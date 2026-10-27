@@ -69,6 +69,39 @@ test('short glyph classification flaps freeze pose and invalidate swing intent',
   t.update([c(1, 900, 0)], 500); assert.equal(p.present, false);
 });
 
+test('moving pieces across the table while paused recovers their identities without arrivals', () => {
+  const t = new PieceTracker(), first = t.update([c(1, 400), c(2, 700, 2)], 0).arrivals;
+  first[0].owner = 1; first[1].owner = 2;
+  t.paused(50); t.resumed(100000);
+  const result = t.update([c(20, 1600), c(10, 200, 2)], 100100);
+  assert.equal(result.arrivals.length, 0);
+  assert.equal(result.recovered.length, 2);
+  assert.equal(first[0].contactId, 20); assert.equal(first[0].owner, 1);
+  assert.equal(first[1].contactId, 10); assert.equal(first[1].owner, 2);
+});
+
+test('same-glyph pause recovery uses proximity even beyond the ordinary blink radius', () => {
+  const t = new PieceTracker(), first = t.update([c(1, 400), c(2, 700)], 0).arrivals;
+  first[0].owner = 1; first[1].owner = 2;
+  t.paused(50); t.resumed(100000);
+  const result = t.update([c(20, 1000), c(10, 100)], 100100);
+  assert.equal(result.arrivals.length, 0);
+  assert.equal(result.recovered.length, 2);
+  assert.equal(first[0].contactId, 10); assert.equal(first[1].contactId, 20);
+});
+
+test('delayed pause recovery survives detector delays and another menu visit', () => {
+  for (const pauseAgain of [false, true]) {
+    const t = new PieceTracker(), p = t.update([c(1)], 0).arrivals[0];
+    p.owner = 7; t.paused(50); t.resumed(100000);
+    t.update([], 105000);
+    if (pauseAgain) { t.paused(106000); t.resumed(120000); }
+    const result = t.update([c(99, 1500)], 130000);
+    assert.equal(result.arrivals.length, 0, 'Deferred menu recovery became a fresh placement');
+    assert.equal(result.recovered[0], p); assert.equal(p.owner, 7);
+  }
+});
+
 test('invalid and unclassified new contacts never become players', () => {
   const t = new PieceTracker();
   t.update([c(1, 0, 0), c(2, NaN), c(3, Infinity)], 0);

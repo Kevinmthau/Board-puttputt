@@ -34,6 +34,9 @@ Keep ball locations about 220 px from glass edges. Validate stance clearance wit
 Use Board’s selector through seats.ts. Solo seats the signed-in profile. Pieces at free edges bind the next unbound roster player. Edges: bottom, top, left, right. Identity and scores follow sessionId. Ownership survives lifts and tracking recovery. Human players only, explicitly selected by the user for physical putting. No AI registrations.
 
 ## Communication and teaching
+
+October 27, 2026 review decisions: a roster membership change during a round saves that round and returns to setup, where the current roster confirms pieces before a new round. A same-session seat replacement retains its score. Each player owns at most one tracked identity. Entering a free edge can open the selector whether the piece lands there or moves there; occupied edges and dismissed stationary pieces do not reopen it. Menu-time movement, delayed re-detection and repeated menus retain the original piece identity without a new splash. Restart before piece setup opens setup. Rendering starts only after platform readiness and asset loading, with one animation loop across pause/resume.
+
 | State | Next action | Signal | Ends when |
 |---|---|---|---|
 | Title | Place a Sports piece | Real product art and miniature scenery | Piece lands |

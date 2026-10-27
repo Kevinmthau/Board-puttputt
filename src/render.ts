@@ -283,7 +283,7 @@ function setupScreen(ctx:CanvasRenderingContext2D,s:RenderState) {
   button(ctx,BUTTONS.addPlayer,s.seats.length>=4?'FOUR GOLFERS READY':'ADD A GOLFER',false,s.seats.length>=4);
   button(ctx,BUTTONS.start,'TEE OFF',true,!s.canStart);button(ctx,BUTTONS.back,'BACK');
   if(s.message)text(ctx,s.message,960,1012,32);
-  for(const seat of s.seats){if(!seat.present)continue;const edge=seat.edge;const p=edge==='bottom'?{x:960,y:1060}:edge==='top'?{x:960,y:20}:edge==='left'?{x:20,y:540}:{x:1900,y:540};ctx.save();ctx.translate(p.x,p.y);ctx.rotate(edgeAngle(edge));ctx.fillStyle='#397c48';roundRect(ctx,-80,-10,160,10,5);ctx.fill();ctx.restore();}
+  for(const seat of s.seats){if(!seat.present)continue;const edge=seat.edge;const p=edge==='bottom'?{x:960,y:1032}:edge==='top'?{x:960,y:48}:edge==='left'?{x:48,y:540}:{x:1872,y:540};ctx.save();ctx.translate(p.x,p.y);ctx.rotate(edgeAngle(edge));ctx.fillStyle='#397c48';roundRect(ctx,-80,-10,160,10,5);ctx.fill();ctx.restore();}
 }
 function ball(ctx:CanvasRenderingContext2D,x:number,y:number,r:number,index:number,alpha=1) {
   ctx.save();ctx.globalAlpha=alpha;ellipse(ctx,x+4,y+6,r+2,r*.8,'#1a473b40');disk(ctx,x,y,r,PLAYER_COLORS[index%4]);

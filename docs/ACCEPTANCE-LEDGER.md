@@ -1,5 +1,16 @@
 # Twist Putt acceptance ledger
 
+## 2026-10-27 — code review and fixes
+
+- Request: review the game, fix findings, commit and push to the existing repository.
+- Source: independent reviews of physics/rules/courses, input/tracking/seating, rendering/audio, and packaging. Fixed unbound menu restarts, stale roster turns, duplicate piece owners, missed/spurious edge selectors, new splashes on pause recovery, startup/pause animation-loop races, setup edge inset, and hardcoded page title. An independent review of the final code diff found no remaining actionable findings in the reviewed paths.
+- Automated: `npm test` reports 157 tests, 154 passed, zero failures and three existing optional catalog skips. Expanded assembled-app coverage exercises restart before setup, center-to-edge selector entry, occupied edges, dismissed selectors, ownership transfer and roster removal during help. Boot coverage now retains every scheduled frame and tests delayed platform readiness plus rapid pause/resume; tracking covers moved pieces, delayed re-detection and repeated menus. Restart, boot, selector and tracking regressions were observed failing against the prior paths before fixes.
+- Additional physics review: 42 focused physics/round/course/gesture tests pass, and 5,000 deterministic four-ball simulations across all nine holes settled with finite positions. No physics or scoring change was required.
+- Browser: inspected the packed browser build with the real platform layer and simulated Board input. Restart from the title opened setup; placing Baseball bound Player 1; Tee off reached First Green; translation followed by a twist produced one stroke; the platform help action and Back retained the one-stroke score. Setup edge indicator placement was visually inspected. This is browser evidence, not physical sensing evidence.
+- Build: strict TypeScript, `npm run build:web` (including `npm run pack`) and `git diff --check` pass. Native archive contains 16 files and excludes browser controls. Final bundle `index-CUSe6rVt.js`, platform build `462b632d96d344c2`, package SHA-256 `2ac57c4f23ed01898b52bcfb717901ed57606f55006971890c0decdcbb8d4708`. App/package identities and original model/assets/dependencies are unchanged. `npm audit` reports zero vulnerabilities.
+- Board/human: this revision was not installed or physically playtested during the review. Existing group collision-feel and long-session hardware checks remain open; no prior physical acceptance is extended to these changes.
+- Publication: target is `main` at `https://github.com/Kevinmthau/Board-puttputt`; the handover commit contains these review fixes and records.
+
 ## 2026-10-27 — collision source publication handover
 
 - Request: commit and push the opponent-ball collision changes to the existing GitHub repository.

@@ -1,5 +1,9 @@
 # Edit history
 
+## 2026-10-27 — code review and fixes
+
+The user requested a full game code review, fixes until clear, then commit and push. Independent passes covered rules/physics/course geometry, input/seating/tracking, rendering/audio, and packaging. Fixed restart before controller setup, stale rounds after roster membership changes, duplicate ownership on recovered identities, missed or spurious setup selectors, pause recovery that produced new landing splashes, and animation loops starting before boot readiness or duplicating after quick pause/resume. Setup indicators now respect the 48 px inset, and the page title comes from the platform. Added lifecycle, selector, ownership and tracking regressions. No scoring, collision, course, asset or dependency change was needed. Final code review found no remaining actionable issue in the reviewed paths; evidence and physical-check limits are in ACCEPTANCE-LEDGER.
+
 ## 2026-10-27 — publish opponent-ball collisions
 
 The user requested committing and pushing the completed collision revision to the existing `Kevinmthau/Board-puttputt` GitHub repository. Included the implementation, regression tests, updated rules and validation records, and native screenshot in the source handover. The game code and completed checks are unchanged from the implementation handover.

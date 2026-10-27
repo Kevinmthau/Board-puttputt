@@ -77,12 +77,14 @@ patch(Board.input, { subscribe: (fn: typeof onBatch) => { onBatch = fn; }, unsub
 patch(Board.application, { onPause: (fn: () => void) => { pauses.push(fn); return () => {}; }, onResume: (fn: () => void) => { resumes.push(fn); return () => {}; } });
 const players = [{ playerId: 'profile-1', sessionId: 1, name: 'One', avatarId: '0', type: BoardPlayerType.Profile }];
 let selectedPlayer: typeof players[number] | null = null;
+let dismissNextSelection = false;
 patch(Board.session, {
   areServicesReady: () => true, isReady: () => true, getPlayers: () => players, getPlayerCount: () => players.length,
   getActiveProfile: () => ({ ...players[0], sessionId: -1 }),
   onPlayersChanged: (fn: () => void) => { rosterChanges.push(fn); return () => {}; }, onActiveProfileChanged: () => () => {},
   presentAddPlayer: async () => {
     addRequests++;
+    if(dismissNextSelection){dismissNextSelection=false;return false;}
     const id = players.length + 1;
     players.push(selectedPlayer ?? { playerId: `profile-${id}`, sessionId: id, name: `Player ${id}`, avatarId: '0', type: BoardPlayerType.Profile });
     selectedPlayer = null;
@@ -134,13 +136,28 @@ test('real application supports setup, rotational strokes, ownership, recovery, 
   assert.ok(raf, 'The app never requested a frame');
   const { BUTTONS } = await import('../src/render');
   frames(5); assert.equal(snapshot().mode, 'title'); assert.ok(drawnText.length > 0);
+  // Restart is available in the system menu before anyone has bound a piece.
+  // It must lead to setup, where the first piece can still acquire an owner.
+  menuAction!('restart'); frames();
+  assert.equal(snapshot().mode, 'setup');
+  assert.equal(snapshot().round, null, 'Restart created a round with no usable controller');
   emit(1, 1, 480, 930, 270, BoardContactPhase.Began); frames();
   assert.equal(snapshot().mode, 'setup'); assert.equal(snapshot().seats[0].glyphId, 1);
-  button(BUTTONS.addPlayer);
+  emit(2, 2, 1000, 930, 90, BoardContactPhase.Began); frames(2);
+  assert.equal(addRequests, 0, 'A second piece at an occupied edge opened a selector');
+  emit(2, 2, 1000, 540, 90); frames(2);
+  assert.equal(addRequests, 0, 'A piece in the center opened a selector');
+  emit(2, 2, 1000, 150, 90); frames(2);
   for (let i = 0; i < 6; i++) await Promise.resolve();
   frames(2); assert.equal(addRequests, 1); assert.equal(snapshot().seats.length, 2);
-  emit(2, 2, 1000, 150, 90, BoardContactPhase.Began); frames(2);
   assert.ok(snapshot().seats.every(s => s.present));
+  dismissNextSelection=true;
+  emit(3, 3, 150, 540, 0, BoardContactPhase.Began); frames();
+  for (let i = 0; i < 6; i++) await Promise.resolve();
+  frames(120);
+  assert.equal(addRequests, 2, 'A dismissed selector repeatedly reopened for a stationary piece');
+  assert.equal(snapshot().seats.length, 2);
+  emit(3, 3, 150, 540, 0, BoardContactPhase.Ended); frames();
   button(BUTTONS.start); frames();
   assert.equal(snapshot().mode, 'play'); assert.equal(snapshot().round!.players.length, 2);
   const initial = snapshot().round!.players[0].ball;
@@ -163,6 +180,7 @@ test('real application supports setup, rotational strokes, ownership, recovery, 
   const activeBall = snapshot().round!.players[1].ball;
   emit(20, 2, activeBall.x, activeBall.y + 160, 240, BoardContactPhase.Began); frames(14);
   assert.equal(snapshot().pieces.find(p => p.contactId === 20)!.owner, 2);
+  assert.equal(snapshot().pieces.filter(p => p.owner === 2).length, 1, 'The retired identity kept ownership after a replacement bound');
   stroke(); until(s => s.round!.phase === 'aim');
   assert.equal(snapshot().round!.turnIndex, 0);
 
@@ -298,4 +316,15 @@ test('real application supports setup, rotational strokes, ownership, recovery, 
   assert.deepEqual(restoredRolling.settledForShot, ['200'], 'Water-reset exclusion kept the obsolete session ID');
   assert.equal(restoredRolling.players[1].ball.state, 'ready');
   assert.equal(restoredRolling.players[1].scores[0], 2, 'Continue added a second water penalty');
+
+  // A system roster edit during help must not resume a removed player's round.
+  menuAction!('help'); frames();
+  const beforeRemoval = JSON.stringify(snapshot().round);
+  players.splice(1);
+  rosterChanges.forEach(fn => fn()); frames();
+  assert.equal(snapshot().mode, 'setup', 'A removed player remained in the active round');
+  assert.equal(snapshot().round, null);
+  assert.deepEqual(snapshot().seats.map(s => s.id), [String(players[0].sessionId)]);
+  assert.ok(snapshot().pieces.every(p => p.owner === null || p.owner === players[0].sessionId));
+  assert.equal(JSON.stringify(persisted.round), beforeRemoval, 'Changing the roster discarded the saved round');
 });
