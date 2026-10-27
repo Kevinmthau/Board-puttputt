@@ -76,4 +76,5 @@ Final review: the course, help and result retain the title's park materials and 
 - Automated: `npm test` completed with 136 tests, 133 passed, zero failures and three optional catalog-wide skips.
 - Package: `npm run pack` passed strict TypeScript, Vite production build and native packaging; 16 files, application bundle `index-CMlQ1l1u.js`, platform `bdd6fc9bf9245904`.
 - Browser, Board and human: no new playtest in this publication-only handover; prior evidence remains unchanged.
-- Pending: public push of the source history awaits confirmation of authorization to redistribute the complete vendored SDK archive. Its linked Developer Terms of Use section 3(b) restricts SDK redistribution except incorporated distributable elements or with written consent. The archive and lockfile remain intact as required by project instructions.
+- Authorization: the user confirmed, “Yes, I’m authorized to publish the bundled SDK. Go ahead and push to kevinmthau.” The archive and lockfile remain intact as required by project instructions.
+- GitHub: pushed source history through `573dbdc` to public `Kevinmthau/Board-puttputt` on `main`, with local `main` tracking `origin/main`. This documentation follow-up records completion.

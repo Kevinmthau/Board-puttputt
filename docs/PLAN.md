@@ -63,6 +63,6 @@ Preserve TypeScript, Vite, Canvas 2D, 1920×1080 and vendored SDK beta.8. Sports
 ## Decisions
 User: nine holes, Sports pieces, twist-speed power, tangent shots, nearby stance, outdoor look, 1–4 humans, alternating shots, family-friendly rules, KT’s Board installation.
 Approved builder defaults: Twist Putt title, par 27, initial tuning above, ghost inactive balls, deterministic hazards, no cloud hosting.
-On October 27, 2026, the user requested committing and publishing the source to a public GitHub repository. The destination is `Kevinmthau/Board-puttputt`; publishing source does not change the game's hosting or runtime.
+On October 27, 2026, the user requested committing and publishing the source to a public GitHub repository and confirmed authorization to publish the bundled SDK. The destination is `Kevinmthau/Board-puttputt`; publishing source does not change the game's hosting or runtime.
 The requested forehead line is gameplay emitted from the front outline, not decoration around a controller.
 References: https://en.wikipedia.org/wiki/Miniature_golf and https://monsterminigolf.com/blog/mini-golf/how-to-play-mini-golf/.

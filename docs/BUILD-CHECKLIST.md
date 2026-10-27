@@ -17,7 +17,7 @@
 - [x] Human physical playtest with Football piece performed. User reported missed line contacts.
 - [x] Revised immediate-response line confirmed by the user: “Yes, it fires reliably now.”
 - [x] Public GitHub repository created; existing history checked for credential patterns and oversized files; tests and native package rechecked.
-- [ ] Push source history to GitHub after confirming authorization to publish the bundled SDK archive under its redistribution terms.
+- [x] Push source history to public `Kevinmthau/Board-puttputt`; the user confirmed authorization to publish the bundled SDK archive.
 
 Still useful for a later group playtest: four people around the physical Board, long-session performance, all Sports shapes, and sound-mix preference. These do not replace the completed solo physical gesture check.
 
