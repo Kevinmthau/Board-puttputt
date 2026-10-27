@@ -1,0 +1,100 @@
+{
+ "metrics": {"advance_per_char_em": 0.62, "cap_height_em": 0.72},
+ "cases": [
+  {"box": [1536, 864], "name": "Puck", "size": 170,
+   "lines": [{"text": "PUCK", "x": 557.2, "capTop": 370.8}]},
+  {"box": [1536, 864], "name": "Noodle Duel", "size": 170,
+   "lines": [{"text": "NOODLE", "x": 451.8, "capTop": 292.3}, {"text": "DUEL", "x": 557.2, "capTop": 449.3}]},
+  {"box": [1536, 864], "name": "Star Base Defenders", "size": 126,
+   "lines": [{"text": "STAR", "x": 611.76, "capTop": 270.64}, {"text": "BASE", "x": 611.76, "capTop": 386.64},
+             {"text": "DEFENDERS", "x": 416.46, "capTop": 502.64}]},
+  {"box": [1536, 864], "name": "WWWWWWWWWWWWWW Go Now", "size": 80,
+   "lines": [{"text": "WWWWWWWWWWWWWW", "x": 420.8, "capTop": 329.2}, {"text": "GO", "x": 718.4, "capTop": 403.2},
+             {"text": "NOW", "x": 693.6, "capTop": 477.2}]},
+  {"box": [1920, 1080], "name": "Noodle Duel", "size": 213,
+   "lines": [{"text": "NOODLE", "x": 563.82, "capTop": 365.32}, {"text": "DUEL", "x": 695.88, "capTop": 561.32}]},
+  {"box": [1200, 300], "name": "Star Base Defenders", "size": 71,
+   "lines": [{"text": "STAR", "x": 511.96, "capTop": 59.44}, {"text": "BASE", "x": 511.96, "capTop": 124.44},
+             {"text": "DEFENDERS", "x": 401.91, "capTop": 189.44}]}
+ ],
+ "layout2": {
+  "fonts": {
+  "Cinzel@900": {
+   "file": "cinzel-900.woff2",
+   "uppercase": true,
+   "cap_ratio": 0.7,
+   "pixel_cells_per_em": null,
+   "advance_em": {" ": 0.25, "A": 0.72, "B": 0.731, "D": 0.842, "E": 0.667, "F": 0.631, "L": 0.652, "N": 0.881, "O": 0.905, "R": 0.793, "S": 0.645, "T": 0.698, "U": 0.845},
+   "ascent_em": {"A": 0.724, "B": 0.7, "D": 0.7, "E": 0.718, "F": 0.718, "L": 0.7, "N": 0.715, "O": 0.714, "R": 0.7, "S": 0.714, "T": 0.719, "U": 0.7},
+   "descent_em": {"A": 0.0, "B": 0.0, "D": 0.0, "E": 0.0, "F": 0.0, "L": 0.0, "N": 0.014, "O": 0.014, "R": 0.0, "S": 0.014, "T": 0.0, "U": 0.014}
+  },
+  "Pacifico@400": {
+   "file": "pacifico-400.woff2",
+   "uppercase": false,
+   "cap_ratio": 0.877,
+   "pixel_cells_per_em": null,
+   "advance_em": {" ": 0.265, "B": 0.827, "J": 0.743, "a": 0.47, "b": 0.473, "c": 0.368, "e": 0.393, "h": 0.502, "j": 0.254, "l": 0.326, "n": 0.496, "o": 0.451, "s": 0.427, "u": 0.462, "y": 0.479},
+   "ascent_em": {"B": 0.862, "J": 0.847, "a": 0.468, "b": 0.94, "c": 0.466, "e": 0.466, "h": 0.94, "j": 0.688, "l": 0.94, "n": 0.466, "o": 0.467, "s": 0.477, "u": 0.466, "y": 0.466},
+   "descent_em": {"B": 0.05, "J": 0.107, "a": 0.005, "b": 0.005, "c": 0.005, "e": 0.005, "h": 0.005, "j": 0.455, "l": 0.005, "n": 0.005, "o": 0.005, "s": 0.027, "u": 0.005, "y": 0.455}
+  },
+  "Press Start 2P@400": {
+   "file": "press-start-2p-400.woff2",
+   "uppercase": true,
+   "cap_ratio": 1.0,
+   "pixel_cells_per_em": 8,
+   "advance_em": {" ": 1.0, "A": 1.0, "C": 1.0, "D": 1.0, "E": 1.0, "F": 1.0, "G": 1.0, "I": 1.0, "K": 1.0, "L": 1.0, "N": 1.0, "O": 1.0, "P": 1.0, "R": 1.0, "S": 1.0, "U": 1.0},
+   "ascent_em": {"A": 1.0, "C": 1.0, "D": 1.0, "E": 1.0, "F": 1.0, "G": 1.0, "I": 1.0, "K": 1.0, "L": 1.0, "N": 1.0, "O": 1.0, "P": 1.0, "R": 1.0, "S": 1.0, "U": 1.0},
+   "descent_em": {"A": 0.0, "C": 0.0, "D": 0.0, "E": 0.0, "F": 0.0, "G": 0.0, "I": 0.0, "K": 0.0, "L": 0.0, "N": 0.0, "O": 0.0, "P": 0.0, "R": 0.0, "S": 0.0, "U": 0.0}
+  },
+  "Silkscreen@400": {
+   "file": "silkscreen-400.woff2",
+   "uppercase": false,
+   "cap_ratio": 0.625,
+   "pixel_cells_per_em": 8,
+   "advance_em": {" ": 0.5, "B": 0.75, "J": 0.75, "a": 0.75, "e": 0.625, "h": 0.75, "l": 0.625, "s": 0.75, "y": 0.875},
+   "ascent_em": {"B": 0.625, "J": 0.625, "a": 0.625, "e": 0.625, "h": 0.625, "l": 0.625, "s": 0.625, "y": 0.625},
+   "descent_em": {"B": 0.0, "J": 0.0, "a": 0.0, "e": 0.0, "h": 0.0, "l": 0.0, "s": 0.0, "y": 0.0}
+  },
+  "Lexend Zetta@900": {
+   "file": "lexend-zetta-900.woff2",
+   "uppercase": false,
+   "cap_ratio": 0.7,
+   "pixel_cells_per_em": null,
+   "advance_em": {" ": 0.555, "A": 0.982, "D": 1.099, "N": 1.145, "b": 1.039, "c": 0.908, "d": 0.999, "e": 0.931, "f": 0.73, "g": 1.046, "h": 1.045, "i": 0.63, "j": 0.703, "k": 1.034, "l": 0.615, "m": 1.497, "n": 1.045, "o": 1.02, "u": 1.047},
+   "ascent_em": {"A": 0.7, "D": 0.7, "N": 0.7, "b": 0.74, "c": 0.546, "d": 0.74, "e": 0.546, "f": 0.745, "g": 0.546, "h": 0.74, "i": 0.834, "j": 0.824, "k": 0.74, "l": 0.74, "m": 0.546, "n": 0.546, "o": 0.546, "u": 0.535},
+   "descent_em": {"A": 0.0, "D": 0.0, "N": 0.0, "b": 0.011, "c": 0.01, "d": 0.011, "e": 0.01, "f": 0.0, "g": 0.23, "h": 0.0, "i": 0.0, "j": 0.219, "k": 0.0, "l": 0.0, "m": 0.0, "n": 0.0, "o": 0.01, "u": 0.011}
+  }
+ },
+ "cases": [
+  {"font": "Cinzel@900", "box": [1536, 864], "name": "Noodle Duel", "size": 144,
+   "lines": [{"text": "NOODLE", "x": 418.656, "capTop": 317.1},
+             {"text": "DUEL", "x": 551.568, "capTop": 446.1}]},
+  {"font": "Cinzel@900", "box": [1920, 1080], "name": "Star Base Defenders", "size": 132,
+   "lines": [{"text": "STAR", "x": 771.504, "capTop": 375.8},
+             {"text": "BASE", "x": 777.642, "capTop": 493.8},
+             {"text": "DEFENDERS", "x": 522.09, "capTop": 611.8}]},
+  {"font": "Pacifico@400", "box": [1536, 864], "name": "Jelly Bash", "size": 139,
+   "lines": [{"text": "Jelly Bash", "x": 437.319, "capTop": 371.049}]},
+  {"font": "Pacifico@400", "box": [1536, 864], "name": "bouncy jelly bash", "size": 133,
+   "lines": [{"text": "bouncy", "x": 586.522, "capTop": 164.68},
+             {"text": "jelly", "x": 649.763, "capTop": 373.68},
+             {"text": "bash", "x": 643.512, "capTop": 582.68}]},
+  {"font": "Press Start 2P@400", "box": [1536, 864], "name": "Noodle Duel", "size": 112,
+   "lines": [{"text": "NOODLE", "x": 432.0, "capTop": 305.0},
+             {"text": "DUEL", "x": 544.0, "capTop": 448.0}]},
+  {"font": "Press Start 2P@400", "box": [1920, 1080], "name": "Puck", "size": 152,
+   "lines": [{"text": "PUCK", "x": 656.0, "capTop": 464.0}]},
+  {"font": "Silkscreen@400", "box": [1536, 864], "name": "Jelly Bash", "size": 192,
+   "lines": [{"text": "Jelly", "x": 432.0, "capTop": 295.0},
+             {"text": "Bash", "x": 480.0, "capTop": 449.0}]},
+  {"font": "Lexend Zetta@900", "box": [1536, 864], "name": "Noodle Duel", "size": 122,
+   "lines": [{"text": "Noodle", "x": 418.47, "capTop": 334.8},
+             {"text": "Duel", "x": 542.788, "capTop": 443.8}]},
+  {"font": "Lexend Zetta@900", "box": [1536, 864], "name": "Abcdefghijklmn Abcdefghijklmn Ab", "size": 52,
+   "lines": [{"text": "Abcdefghijklmn", "x": 424.696, "capTop": 350.8},
+             {"text": "Abcdefghijklmn", "x": 424.696, "capTop": 413.8},
+             {"text": "Ab", "x": 715.454, "capTop": 476.8}]},
+  {"font": "Press Start 2P@400", "box": [150.5, 100], "name": "Supercalifragi", "size": 16,
+   "lines": [{"text": "SUPERCALIFRAGI", "x": -37.0, "capTop": 42.0}]}
+ ]}
+}

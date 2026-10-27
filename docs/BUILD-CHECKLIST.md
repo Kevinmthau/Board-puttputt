@@ -1,0 +1,15 @@
+# Build checklist
+- [x] Approved design, exact starter, Sports model and assets.
+- [ ] First-hole core loop builds, packs and answers a placed piece.
+- [ ] Players can place beside the ball, clear the line and sweep to strike.
+- [ ] Power follows twist speed in both directions; jitter and movement do not fire.
+- [ ] Nine holes, hazards and safe routes work.
+- [ ] Alternating turns, water, stroke cap, ties and scores work.
+- [ ] Board roster, ownership, tracking recovery and pause work.
+- [ ] Teaching, art, seat HUDs, sound and celebrations are present.
+- [ ] Saves, help, rematch and setup work.
+- [ ] Browser simulator has movable pieces and rotation controls.
+- [ ] Tests and package pass; model hash matches.
+- [ ] Browser visual and full-course checks pass.
+- [ ] Installed on KT’s Board; logs and screenshot checked.
+- [ ] Human physical feel checked with real Sports pieces.

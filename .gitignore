@@ -1,0 +1,5 @@
+node_modules/
+dist/
+*.webapp.zip
+.DS_Store
+# Keep board.config.json in git: its appId keeps saves and installs stable.
