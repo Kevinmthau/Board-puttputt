@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Course acceptance replay</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #122c24; color: #fff8e5; font: 16px/1.45 system-ui, sans-serif; }
+    body > [data-board-sim] { display: none !important; }
+    main { display: grid; grid-template-columns: minmax(0, 1fr) 330px; height: 100vh; }
+    .screen { display: grid; align-content: center; min-width: 0; background: #0b201a; }
+    iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; }
+    aside { min-height: 0; padding: 22px; background: #1b3d31; overflow: auto; }
+    h1 { font-size: 23px; line-height: 1.2; margin: 0 0 12px; }
+    p { margin: 12px 0; }
+    .label { font-size: 12px; color: #c5d7b5; letter-spacing: .08em; text-transform: uppercase; font-weight: 800; }
+    .note { color: #d1ddcd; font-size: 14px; }
+    button { display: block; width: 100%; min-height: 48px; border: 0; border-radius: 10px; background: #f6cf61; color: #163b2d; font: 750 16px system-ui, sans-serif; padding: 12px; margin: 10px 0; cursor: pointer; }
+    button.secondary { background: #dce8d1; }
+    button:disabled { opacity: .45; cursor: default; }
+    label { display: block; font-size: 14px; margin: 14px 0; }
+    input { width: 18px; height: 18px; vertical-align: middle; }
+    #status { min-height: 70px; padding: 12px; background: #102c22; border-radius: 10px; font-weight: 650; }
+    #status[data-level="fail"] { background: #582d27; }
+    #status[data-level="pass"] { background: #215b3c; }
+    ol { padding-left: 22px; font-size: 13px; }
+    li { margin: 7px 0; }
+    details { margin-top: 18px; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.45 ui-monospace, monospace; }
+    @media (max-width: 850px) { main { grid-template-columns: 1fr; height: auto; } aside { max-height: none; } }
+  </style>
+</head>
+<body>
+<main>
+  <section class="screen"><iframe id="game-frame" title="Real game acceptance session" src="/"></iframe></section>
+  <aside>
+    <div class="label">Developer acceptance</div>
+    <h1>Nine-hole gesture replay</h1>
+    <p class="note">Runs the real game, tracker, swing detector, physics and turn rules. A virtual Tennis piece sends ordinary SDK contacts at up to 60 Hz.</p>
+    <button id="run">Run course replay</button>
+    <button id="next" disabled>Next hole replay</button>
+    <button id="stop" class="secondary" disabled>Stop replay</button>
+    <button id="rematch" class="secondary" disabled>Verify rematch</button>
+    <label><input id="checkpoints" type="checkbox" checked> Pause at each tee for inspection</label>
+    <p id="status" role="status" aria-live="polite">Ready. Run starts a fresh one-player browser session.</p>
+    <ol id="results"></ol>
+    <button id="download" class="secondary" disabled>Download evidence report</button>
+    <details><summary>Live evidence and failures</summary><pre id="report">No replay yet.</pre></details>
+    <p class="note">This is browser automation evidence, not human play or a physical Board test. Keep this tab visible. Do not drag the virtual piece during a run.</p>
+  </aside>
+</main>
+<script type="module" src="/dev/acceptance.js"></script>
+</body>
+</html>

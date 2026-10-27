@@ -14,7 +14,7 @@ const devGame = () => {
   try {
     const { name, appId } = JSON.parse(readFileSync(file, "utf8"));
     const game = { name: typeof name === "string" ? name : "", appId: typeof appId === "string" ? appId : "" };
-    return `window.__BOARD_DEV_GAME__ = ${JSON.stringify(game).replace(/</g, "\\u003c")};`;
+    return `window.__BOARD_DEV_GAME__ = ${JSON.stringify(game).replace(/</g, "\\u003c")};document.title=window.__BOARD_DEV_GAME__.name;`;
   } catch {
     return "";
   }
@@ -26,6 +26,8 @@ const browserHost = (): Plugin => ({
   transformIndexHtml: () => [
     { tag: "script", children: readFileSync(new URL("./dev/browser-host.js", import.meta.url), "utf8"), injectTo: "head-prepend" },
     { tag: "script", children: devGame(), injectTo: "head" },
+    { tag: "script", children: readFileSync(new URL("./dev/player-selector.js", import.meta.url), "utf8"), injectTo: "head" },
+    { tag: "script", children: readFileSync(new URL("./dev/putting-controls.js", import.meta.url), "utf8"), injectTo: "head" },
   ],
 });
 

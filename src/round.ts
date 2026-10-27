@@ -91,8 +91,9 @@ export function restoreRound(value: unknown): Round | null {
     for (const p of round.players) {
       if (typeof p.id !== 'string' || !p.ball || !Number.isFinite(p.ball.x) || !Number.isFinite(p.ball.y) || !Number.isFinite(p.ball.vx) || !Number.isFinite(p.ball.vy)) return null;
       if (!['ready', 'moving', 'sunk'].includes(p.ball.state) || !p.ball.lastSafe || !Number.isFinite(p.ball.lastSafe.x) || !Number.isFinite(p.ball.lastSafe.y)) return null;
+      if (p.ball.r !== 14 || !Number.isFinite(p.ball.restTime) || p.ball.restTime < 0 || !Number.isFinite(p.ball.tunnelCooldown) || p.ball.tunnelCooldown < 0 || typeof p.finished !== 'boolean') return null;
       if (!Array.isArray(p.scores) || p.scores.length !== HOLES.length || p.scores.some(n => !Number.isInteger(n) || n < 0 || n > STROKE_CAP)) return null;
-      if (!Array.isArray(p.pickedUp) || p.pickedUp.length !== HOLES.length) return null;
+      if (!Array.isArray(p.pickedUp) || p.pickedUp.length !== HOLES.length || p.pickedUp.some(value => typeof value !== 'boolean')) return null;
     }
     if (new Set(round.players.map(p => p.id)).size !== round.players.length) return null;
     const copy = JSON.parse(JSON.stringify(round)) as Round;

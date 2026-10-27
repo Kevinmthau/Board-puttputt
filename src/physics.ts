@@ -1,4 +1,4 @@
-import { gateIsOpen, pointInPolygon, pointInRect, type Hole, type Point, type Segment } from './course';
+import { gateIsOpen, pointInBridge, pointInPolygon, pointInRect, type Hole, type Point, type Segment } from './course';
 
 export const BALL_RADIUS = 14;
 export const FIXED_STEP = 1 / 120;
@@ -26,8 +26,8 @@ export function strikeBall(ball: Ball, velocity: Point): boolean {
   return true;
 }
 
-export function isWater(point: Point, hole: Hole): boolean {
-  return hole.water.some(r => pointInRect(point, r)) && !hole.bridges.some(r => pointInRect(point, r));
+export function isWater(point: Point, hole: Hole, ballRadius = BALL_RADIUS): boolean {
+  return hole.water.some(r => pointInRect(point, r)) && !hole.bridges.some(bridge => pointInBridge(point, bridge, ballRadius));
 }
 
 function rebound(ball: Ball, nx: number, ny: number, penetration: number): number {
@@ -83,7 +83,7 @@ export function stepBall(ball: Ball, hole: Hole, dt: number, time: number): Phys
     if (ball.tunnelCooldown === 0) {
       const tunnel = hole.tunnels.find(t => Math.hypot(ball.x - t.entry.x, ball.y - t.entry.y) < t.entry.r);
       if (tunnel) {
-        const speed = Math.max(160, Math.hypot(ball.vx, ball.vy) * tunnel.speedScale);
+        const speed = Math.hypot(ball.vx, ball.vy) * tunnel.speedScale;
         const length = Math.hypot(tunnel.direction.x, tunnel.direction.y) || 1;
         ball.x = tunnel.exit.x; ball.y = tunnel.exit.y;
         ball.vx = tunnel.direction.x / length * speed; ball.vy = tunnel.direction.y / length * speed;

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { activePlayer, createRound, restoreRound, serializeRound, stepRound, strike, winners } from '../src/round';
+import { activePlayer, advanceHole, createRound, restoreRound, serializeRound, stepRound, strike, totals, winners } from '../src/round';
+import { HOLES } from '../src/course';
 
 function finishStroke(round: ReturnType<typeof createRound>) {
   for (let i = 0; i < 2400 && round.phase === 'roll'; i++) stepRound(round, 1 / 120);
@@ -36,4 +37,74 @@ test('saved rounds preserve player identity and reject malformed values', () => 
   assert.equal(restoreRound('{'), null);
   assert.equal(restoreRound({ version: 1, players: [] }), null);
   assert.deepEqual(winners(createRound(['a', 'b'])), ['a', 'b']);
+});
+
+test('water costs exactly one extra stroke and advances the turn once', () => {
+  const original = HOLES[0].water;
+  try {
+    HOLES[0].water = [{ x: 520, y: 400, w: 300, h: 300 }];
+    const round = createRound(['a', 'b']);
+    strike(round, { x: 600, y: 0 }); finishStroke(round);
+    assert.equal(round.players[0].scores[0], 2);
+    assert.equal(round.players[0].ball.x, HOLES[0].tee.x);
+    assert.equal(activePlayer(round).id, 'b');
+  } finally { HOLES[0].water = original; }
+});
+
+test('fixed-step results do not depend on browser frame rate', () => {
+  const fast = createRound(['a']), slow = createRound(['a']);
+  strike(fast, { x: 500, y: 100 }); strike(slow, { x: 500, y: 100 });
+  for (let i = 0; i < 240; i++) stepRound(fast, 1 / 120);
+  for (let i = 0; i < 60; i++) stepRound(slow, 1 / 30);
+  assert.ok(Math.abs(fast.players[0].ball.x - slow.players[0].ball.x) < 0.001);
+  assert.ok(Math.abs(fast.players[0].ball.y - slow.players[0].ball.y) < 0.001);
+});
+
+test('finished players are skipped until the whole group advances', () => {
+  const round = createRound(['a', 'b', 'c']);
+  round.players[1].finished = true;
+  round.players[1].ball.state = 'sunk';
+  strike(round, { x: 180, y: 0 }); finishStroke(round);
+  assert.equal(activePlayer(round).id, 'c');
+  assert.equal(advanceHole(round), false);
+});
+
+test('four players can finish all nine holes with real shots and receive a shared win', () => {
+  const routes = [
+    [[1350, 540]],
+    [[520, 690], [1480, 690]],
+    [[700, 745], [1250, 745], [1450, 510]],
+    [[700, 745], [1200, 745], [1450, 480]],
+    [[650, 750], [1250, 750], [1450, 540]],
+    [[600, 750], [1300, 750], [1450, 500]],
+    [[600, 300], [1450, 300], [1450, 540]],
+    [[900, 420], [900, 710], [1450, 710]],
+    [[700, 755], [1330, 755], [1580, 540]],
+  ];
+  let round = createRound(['a', 'b', 'c', 'd']);
+  for (let holeIndex = 0; holeIndex < 9; holeIndex++) {
+    const nextTarget = [0, 0, 0, 0];
+    while (round.phase === 'aim') {
+      const index = round.turnIndex, ball = activePlayer(round).ball;
+      const target = routes[holeIndex][nextTarget[index]++];
+      assert.ok(target, `hole ${holeIndex + 1}: planned shots suffice`);
+      const dx = target[0] - ball.x, dy = target[1] - ball.y, distance = Math.hypot(dx, dy);
+      const speed = Math.sqrt(640 * distance);
+      assert.equal(strike(round, { x: dx / distance * speed, y: dy / distance * speed }), true);
+      finishStroke(round);
+      assert.notEqual(round.phase, 'roll');
+    }
+    assert.ok(round.players.every(p => p.finished));
+    if (holeIndex < 8) {
+      assert.equal(round.phase, 'hole-complete');
+      round = restoreRound(serializeRound(round))!;
+      assert.equal(advanceHole(round), true);
+      assert.equal(round.time, 0);
+      assert.ok(round.players.every(p => !p.finished && p.ball.state === 'ready'));
+    }
+  }
+  assert.equal(round.phase, 'complete');
+  assert.deepEqual(totals(round), ['a', 'b', 'c', 'd'].map(id => ({ id, total: 24 })));
+  assert.deepEqual(winners(round), ['a', 'b', 'c', 'd']);
+  assert.equal(advanceHole(round), false);
 });

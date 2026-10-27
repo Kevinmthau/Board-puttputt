@@ -1,8 +1,14 @@
-# Asset manifest: <game name>
+# Twist Putt asset manifest
 
-Every image, sound, music track, and font the game ships, one row each, added when the file is. Any tool or your own files are fine; say which, so the asset can be traced, made again, or replaced. Never ship a file whose licence you do not know.
-
-| File | Role (where it shows and what it does) | Where it came from (tool and prompt, own work, or source link) | Licence |
+| Asset | Role | Source | Rights / notes |
 |---|---|---|---|
-| `public/art/title.webp` (example) | Title key art behind the name; the paddles' world in one picture | Image generator, prompt kept in `docs/prompts/title.txt` | Ours |
-| `public/fonts/itc-kabel-ultra.otf` | Board's title face, used for small text | Shipped with the starter | Board's |
+| public/piece-art/1.png through 8.png | Identify Sports equipment in setup and help | board-games-ai Sports catalog at 87831b85 | Canonical Board assets, retained unchanged for Board game use |
+| public/piece-footprints.json | Actual piece geometry and facing | Same Sports catalog | Board catalog data |
+| public/model.tflite | Sports recognition | sports_v0.1.0.tflite, same catalog | Board model, original format, no runtime activation |
+| public/fonts/itc-kabel-ultra.otf | Game typography and title | Studio starter | Board-supplied font |
+| src/render.ts | Authored park scenery, course materials, title composition, props, balls, feedback and UI | Original Canvas 2D artwork created for this game | Original code artwork; canonical pieces are not replaced |
+| src/audio.ts | Putt, rail, water, tunnel, cup, fanfare and bird ambience | Original Web Audio synthesis | Original procedural sound; all voices use platform audio buses |
+| dev/putting-controls.js | Browser-only Sports footprint proxies | Original code using canonical outlines | Development aid, excluded from native package |
+
+Sports model SHA-256: `4d75343e149b72f8410cad10f518c64791634ae6e6932880088a34c164026ad9`.
+No third-party stock art or network-loaded fonts are required.

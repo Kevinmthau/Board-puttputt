@@ -1,4 +1,4 @@
-// GENERATED from assets/game-template/astra-starter/src/browser-host.ts by scripts/board_app/build_browser_host.mjs. Do not edit.
+// Based on Studio’s generated browser host. Local browser-only additions keep external poses, scale pointer coordinates, and expose contacts to virtual controls.
 // The web lane's simulated Board host, injected by assets/board-app/boot_capture.cjs so a
 // packed Create Game candidate boots in a headless browser the way it does on a Board.
 (() => {
@@ -134,7 +134,7 @@ function installBrowserHost(win         = window)          {
   const push = (c      , p        ) => {
     let prev                  ;
     for (let i = pending.length - 1; i >= 0 && !prev; i--) if (pending[i].id === c.id) prev = pending[i];
-    if (prev && prev.p === 2 && p === 2) return void Object.assign(prev, { x: c.x, y: c.y, touched: c.touched });
+    if (prev && prev.p === 2 && p === 2) return void Object.assign(prev, { x: c.x, y: c.y, o: c.o, touched: c.touched });
     pending.push({ id: c.id, x: c.x, y: c.y, o: c.o, p, g: c.g, touched: c.touched });
   };
   const touch = { onmessage: null                                          , postMessage() {} };
@@ -176,20 +176,29 @@ function installBrowserHost(win         = window)          {
   const endFingers = () => (live.forEach((c) => !c.resting && end(c)), byPointer.clear());
   const liftResting = () => live.forEach((c) => c.resting && end(c));
   const fromShim = (e       ) => Boolean((e.target                  )?.closest?.("[data-board-sim]"));
+  const pointerPoint = (e) => {
+    const canvas = doc.querySelector("#game");
+    const r = canvas?.getBoundingClientRect();
+    return r && r.width && r.height
+      ? { x: (e.clientX - r.left) * 1920 / r.width, y: (e.clientY - r.top) * 1080 / r.height }
+      : { x: e.clientX, y: e.clientY };
+  };
   const onDown = (e              ) => {
     if (menuOpen || fromShim(e)) return;
+    const point = pointerPoint(e);
     let c                  ;
-    if (e.shiftKey) for (const r of live.values()) if (r.resting && Math.hypot(r.x - e.clientX, r.y - e.clientY) < 80) c = r;
-    if (c) (c.x = e.clientX), (c.y = e.clientY), (c.touched = 1), push(c, 2);
+    if (e.shiftKey) for (const r of live.values()) if (r.resting && Math.hypot(r.x - point.x, r.y - point.y) < 80) c = r;
+    if (c) (c.x = point.x), (c.y = point.y), (c.touched = 1), push(c, 2);
     else {
-      c = { id: nextId++, x: e.clientX, y: e.clientY, o: 0, p: 1, g: e.shiftKey ? host.__sim.glyph : 0, touched: 1, resting: e.shiftKey };
+      c = { id: nextId++, x: point.x, y: point.y, o: 0, p: 1, g: e.shiftKey ? host.__sim.glyph : 0, touched: 1, resting: e.shiftKey };
       live.set(c.id, c), push(c, 1);
     }
     byPointer.set(e.pointerId, c.id);
   };
   const onMove = (e              ) => {
+    const point = pointerPoint(e);
     const c = live.get(byPointer.get(e.pointerId) ?? -1);
-    if (c) (c.x = e.clientX), (c.y = e.clientY), push(c, 2);
+    if (c) (c.x = point.x), (c.y = point.y), push(c, 2);
   };
   const onUp = (e              ) => {
     const c = live.get(byPointer.get(e.pointerId) ?? -1);
@@ -207,7 +216,7 @@ function installBrowserHost(win         = window)          {
   const restore = new Map                ();
   const root = doc.createElement("div");
   root.setAttribute("data-board-sim", "");
-  root.innerHTML = `<style>${STYLE}</style><div class="bs-label">BROWSER SIMULATOR · drag: finger · shift-drag: Piece · P: menu</div><div class="bs-menu" hidden></div>`;
+  root.innerHTML = `<style>${STYLE}</style><div class="bs-label">BROWSER SIMULATOR · P: menu</div><div class="bs-menu" hidden></div>`;
   (doc.body ?? doc.documentElement).appendChild(root);
   const label = root.querySelector(".bs-label")               ;
   const menu = root.querySelector(".bs-menu")               ;
@@ -249,7 +258,7 @@ function installBrowserHost(win         = window)          {
   const onKey = (e               ) => {
     if (/^(INPUT|TEXTAREA|SELECT)$/.test((e.target                  )?.tagName ?? "")) return;
     const k = e.key.length === 1 ? e.key.toUpperCase() : e.key;
-    if (!menuOpen) return void (k === "P" || k === "Escape" ? openMenu() : k === "Backspace" && liftResting());
+    if (!menuOpen) return void (k === "P" || k === "Escape" ? openMenu() : k === "Backspace" && !win.TwistPuttSim && liftResting());
     e.preventDefault();
     if (k === "Escape" || k === "Enter" || k === "P") closeMenu("RESUME");
     else if (k === "Q") closeMenu("EXIT_GAME_UNSAVED");
@@ -381,7 +390,19 @@ function installBrowserHost(win         = window)          {
     __simulated: true,
     __sim: {
       glyph: 1,
-      emit: (contacts) => contacts.forEach((c) => pending.push({ id: c.id, x: c.x, y: c.y, o: c.orientation, p: c.phase, g: c.glyph, touched: c.touched ? 1 : 0 })),
+      emit: (contacts) => {
+        if (menuOpen || redetectIn > 0) return;
+        contacts.forEach((c) => {
+          const pose = { id: c.id, x: c.x, y: c.y, o: c.orientation, p: c.phase, g: c.glyph, touched: c.touched ? 1 : 0, resting: c.glyph > 0 };
+          nextId = Math.max(nextId, c.id + 1);
+          if (c.phase === 3 || c.phase === 4) live.delete(c.id);
+          else live.set(c.id, pose);
+          pending.push(pose);
+        });
+      },
+      // Copies only. Virtual controls cannot mutate the simulated sensor behind emit().
+      contacts: () => [...live.values()].map(c => ({ id:c.id, x:c.x, y:c.y, orientation:c.o, glyph:c.g, touched:Boolean(c.touched) })),
+      get redetecting() { return redetectIn > 0; },
       flush,
       get menuOpen() { return menuOpen; },
       // This host re-reports resting Pieces itself; a harness must not double the blips.

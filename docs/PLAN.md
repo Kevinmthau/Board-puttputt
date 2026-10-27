@@ -5,14 +5,14 @@ Nine outdoor mini golf holes, par 27, for 1–4 people using Board Sports pieces
 
 ## How to play
 1. Place your Sports piece beside your ball.
-2. Turn its forehead line away from the ball.
-3. Twist the line through the ball to putt.
+2. Point the forehead line toward your ball.
+3. Twist the line through the ball to putt; it is ready immediately.
 4. Finish nine holes in the fewest strokes.
 
 ## Rules
-The club begins at the real front outline and reaches 240 px from the piece center. Ball radius: 14 px. Striking range: 120–230 px. Contact launches along the sweep, perpendicular to the club. Both rotation directions work. Angular speed 30–540 degrees/second maps to ball speed 180–1500 px/second, clamped. Distance does not change power.
+The club begins at the real front outline and reaches 240 px from the piece center. Ball radius: 14 px. The visible finite line defines its reach, with no additional stance-distance gate. Contact launches along the sweep, perpendicular to the club. Both rotation directions work. Angular speed 30–540 degrees/second maps to ball speed 180–1500 px/second, clamped. Distance does not change power.
 
-Require a settled piece, a clear line and deliberate rotation. Placement, sliding, jitter, rebind and pause do not fire. Swept contact catches fast swings. One strike until the ball rests and the club clears it again. Physical pieces are controllers and may stand on scenery. Only balls collide with course geometry.
+The user tested the game on KT’s Board and reported that the line often crossed the ball without firing, then requested “make the line active at all times.” This overrides the initial settled-piece, clear-line, deliberate-backswing and 120–230 px stance gates. A rotating line is immediately live for the current player's stopped ball, including when it starts in contact. Natural position drift while twisting is allowed. Pure placement or translation, missing tracking history, pause, and inactive turns do not create strokes. A small angle tolerance filters sensor jitter. Swept contact catches fast swings, and a committed shot remains locked until the ball rests. Physical pieces are controllers and may stand on scenery. Only balls collide with course geometry.
 
 Take one shot each in roster order, skipping finished players. Inactive balls are visible and noncolliding. Water adds one penalty and returns to the pre-shot position. Seven total strokes ends a hole with a pickup. All players finish before advancing. Lowest total wins; equal totals share the win.
 
@@ -38,8 +38,8 @@ Use Board’s selector through seats.ts. Solo seats the signed-in profile. Piece
 |---|---|---|---|
 | Title | Place a Sports piece | Real product art and miniature scenery | Piece lands |
 | Setup | Choose players and place pieces | Canonical art, edge cues, roster | Ready players enter course |
-| Address | Move beside active ball | Patterned ball pulse and seat cue | Legal stance settles |
-| Swing | Turn clear, sweep through | Forehead line and literal demonstration | Shot commits |
+| Address | Move beside active ball | Patterned ball pulse and seat cue | The visible line can reach the ball |
+| Swing | Rotate the line through the ball | Always-bright forehead line and literal demonstration | Shot commits |
 | Roll | Watch ball | Trail, sound and obstacle reactions | Ball rests, sinks or splashes |
 | Missing | Return owned piece | Seat prompt | Piece returns |
 | Result | Rematch or change setup | Shared scorecard and decision | Choice made |
