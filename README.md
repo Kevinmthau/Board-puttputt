@@ -2,6 +2,8 @@
 
 Nine outdoor mini golf holes for 1–4 people on Board. Every Board Sports piece can be a putter.
 
+Source repository: [Kevinmthau/Board-puttputt](https://github.com/Kevinmthau/Board-puttputt).
+
 Place your piece beside your ball and twist the forehead line through it. The line is ready immediately; no settling or backswing is required. The ball moves **along the sweep**, sideways to the line. Faster twists make stronger shots. Sliding without rotation does not strike.
 
 Take one shot each. Water adds one stroke and resets to the pre-shot position. Seven total strokes ends a hole. Lowest nine-hole score wins; ties share the win.

@@ -2,6 +2,7 @@
 
 | Asset | Role | Source | Rights / notes |
 |---|---|---|---|
+| vendor/board.fun-web-sdk-1.0.0-beta.8.tgz | Pinned SDK dependency used to build the game | Board Studio starter | Copyright Harris Hill Products Inc.; [Developer Terms of Use](https://docs.dev.board.fun/more/license). Section 3(b) restricts SDK redistribution except incorporated distributable elements or with written consent. |
 | public/piece-art/1.png through 8.png | Identify Sports equipment in setup and help | board-games-ai Sports catalog at 87831b85 | Canonical Board assets, retained unchanged for Board game use |
 | public/piece-footprints.json | Actual piece geometry and facing | Same Sports catalog | Board catalog data |
 | public/model.tflite | Sports recognition | sports_v0.1.0.tflite, same catalog | Board model, original format, no runtime activation |

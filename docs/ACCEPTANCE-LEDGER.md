@@ -67,3 +67,13 @@ The original and revised full browser replays both passed all nine holes in 24 s
 The user tested the updated build and confirmed: **“Yes, it fires reliably now.”** This is human confirmation of the revised gesture with the physical Football piece. A full four-person hardware round, physical Tennis handling, long-session performance and subjective sound mix were not tested in this session.
 
 Final review: the course, help and result retain the title's park materials and palette; bridge edges match their collision polygons; tunnel exit arrows point along the emitted ball direction; pickups have an explicit live cue; long names use readable short labels instead of shrinking or clipping. The playable browser build was refreshed to the final bundle. Native installation and observed solo play pass; the broader group-play and long-session checks above remain open.
+
+## 2026-10-27 — public GitHub publication preparation
+
+- Request: commit and push the project to a public GitHub repository.
+- Source: the existing game is committed through `fea9416`. Created `https://github.com/Kevinmthau/Board-puttputt`, verified GitHub reports `PUBLIC`, and configured it as `origin`.
+- Publication checks: no credential patterns found across 109 historical Git blobs or 51 files in the SDK archive; no tracked build/dependency directories or GitHub size-limit issues. This is a bounded pattern check, not a security guarantee.
+- Automated: `npm test` completed with 136 tests, 133 passed, zero failures and three optional catalog-wide skips.
+- Package: `npm run pack` passed strict TypeScript, Vite production build and native packaging; 16 files, application bundle `index-CMlQ1l1u.js`, platform `bdd6fc9bf9245904`.
+- Browser, Board and human: no new playtest in this publication-only handover; prior evidence remains unchanged.
+- Pending: public push of the source history awaits confirmation of authorization to redistribute the complete vendored SDK archive. Its linked Developer Terms of Use section 3(b) restricts SDK redistribution except incorporated distributable elements or with written consent. The archive and lockfile remain intact as required by project instructions.
